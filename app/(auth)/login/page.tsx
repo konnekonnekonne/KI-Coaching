@@ -4,8 +4,9 @@ export const dynamic = 'force-dynamic'
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { Logo, Button, Input } from '@/components/ui'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -32,70 +33,52 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-6">
-      <div className="w-full max-w-sm space-y-8">
-        <div className="text-center">
-          <Link href="/" className="text-2xl font-bold tracking-tight text-[--accent]">
-            kico
-          </Link>
-          <h2 className="mt-4 text-xl font-semibold text-[--foreground]">
-            Willkommen zurück
-          </h2>
+    <div className="min-h-screen bg-bg flex flex-col items-center justify-center px-6">
+      <div className="w-full max-w-sm">
+
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <Link href="/"><Logo size={32} subline="Dein KI-Coach" /></Link>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-[--foreground] mb-1">
-              E-Mail
-            </label>
-            <input
-              id="email"
+        {/* Card */}
+        <div className="bg-surface border border-border rounded-2xl p-8">
+          <h1 className="heading-3 mb-6">Willkommen zurück</h1>
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <Input
+              label="E-Mail"
               type="email"
               required
               autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-[--border] bg-[--surface] px-4 py-2.5 text-[--foreground] placeholder:text-[--muted] focus:outline-none focus:ring-2 focus:ring-[--accent]"
               placeholder="du@beispiel.de"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
             />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-[--foreground] mb-1">
-              Passwort
-            </label>
-            <input
-              id="password"
+            <Input
+              label="Passwort"
               type="password"
               required
               autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-[--border] bg-[--surface] px-4 py-2.5 text-[--foreground] placeholder:text-[--muted] focus:outline-none focus:ring-2 focus:ring-[--accent]"
               placeholder="••••••••"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              error={error ?? undefined}
             />
-          </div>
+            <Button type="submit" loading={loading} className="mt-2 w-full">
+              Anmelden
+            </Button>
+          </form>
+        </div>
 
-          {error && (
-            <p className="text-sm text-red-600 bg-red-50 rounded-lg px-4 py-2">{error}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-full bg-[--accent] px-4 py-3 text-white font-medium hover:bg-[--accent-light] transition-colors disabled:opacity-50"
-          >
-            {loading ? 'Lädt…' : 'Anmelden'}
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-[--muted]">
+        {/* Footer */}
+        <p className="caption text-center mt-5">
           Noch kein Konto?{' '}
-          <Link href="/signup" className="text-[--accent] font-medium hover:underline">
+          <Link href="/signup" className="text-primary font-medium hover:underline">
             Registrieren
           </Link>
         </p>
       </div>
-    </main>
+    </div>
   )
 }
