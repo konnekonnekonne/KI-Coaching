@@ -24,8 +24,8 @@ export default function Home() {
           </Badge>
 
           <h1 className="heading-1 max-w-2xl mx-auto mb-5">
-            Finde neue Perspektiven —{' '}
-            <em className="not-italic text-primary">wann immer du feststeckst.</em>
+            Finde deinen nächsten Schritt —{' '}
+            <em className="not-italic text-primary">egal wo du gerade stehst.</em>
           </h1>
 
           <p className="body-text text-muted max-w-lg mx-auto mb-10">
