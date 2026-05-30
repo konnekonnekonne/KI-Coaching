@@ -25,7 +25,7 @@ export default function Home() {
 
           <h1 className="heading-1 max-w-2xl mx-auto mb-5">
             Finde deinen nächsten Schritt —{' '}
-            <em className="not-italic text-primary">egal wo du gerade stehst.</em>
+            <em className="not-italic text-primary">egal wo du gerade feststeckst.</em>
           </h1>
 
           <p className="body-text text-muted max-w-lg mx-auto mb-10">
