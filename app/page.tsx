@@ -20,12 +20,12 @@ export default function Home() {
         <section className="max-w-4xl mx-auto px-6 pt-20 pb-16 text-center">
 
           <Badge variant="green" className="mb-6">
-            ECA-zertifiziert · INA CCW-Curriculum
+            ECA & INA CCW-zertifiziert
           </Badge>
 
           <h1 className="heading-1 max-w-2xl mx-auto mb-5">
-            Coaching, das auf dich{' '}
-            <em className="not-italic text-primary">wartet.</em>
+            Finde neue Perspektiven —{' '}
+            <em className="not-italic text-primary">wann immer du feststeckst.</em>
           </h1>
 
           <p className="body-text text-muted max-w-lg mx-auto mb-10">
@@ -49,10 +49,10 @@ export default function Home() {
 
             <div className="bg-surface border border-border rounded-xl p-6">
               <div className="text-2xl mb-3">🌱</div>
-              <h3 className="heading-3 mb-2">Methodisch</h3>
+              <h3 className="heading-3 mb-2">Strukturiert, nicht improvisiert</h3>
               <p className="caption text-muted leading-relaxed">
-                Basierend auf dem INA CCW-Curriculum. Systemische Fragetechniken,
-                U-Modell, Inneres Team — kein freies Improvisieren.
+                Hinter jedem Gespräch steckt ein wissenschaftlicher Ansatz —
+                so wie ein ausgebildeter Coach vorgeht. Nur ohne Warteliste.
               </p>
             </div>
 
@@ -81,7 +81,8 @@ export default function Home() {
         <section className="border-t border-border">
           <div className="max-w-4xl mx-auto px-6 py-8 text-center">
             <p className="caption">
-              KICO ersetzt keine Psychotherapie oder professionelle Beratung.
+              KICO ersetzt keine Psychotherapie oder professionelle Beratung.{' '}
+              <br />
               Bei psychischen Krisen wende dich an die Telefonseelsorge:{' '}
               <a href="tel:08001110111" className="text-primary hover:underline font-medium">
                 0800 111 0 111
