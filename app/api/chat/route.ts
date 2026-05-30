@@ -11,7 +11,6 @@ export const maxDuration = 60
 
 export async function POST(request: Request) {
   try {
-    // Auth check
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -19,37 +18,43 @@ export async function POST(request: Request) {
       return new Response('Unauthorized', { status: 401 })
     }
 
-    const { messages, sessionId } = await request.json()
+    const { messages, sessionId, isGreeting = false } = await request.json()
 
-    if (!messages || !Array.isArray(messages)) {
+    if (!Array.isArray(messages)) {
       return new Response('Invalid request body', { status: 400 })
     }
 
-    // Stream response from Claude
+    // Begrüßung: leere History, Claude öffnet das Gespräch proaktiv
+    // Normaler Chat: History + neue User-Nachricht
+    const claudeMessages = isGreeting
+      ? [{ role: 'user' as const, content: 'Bitte eröffne das Gespräch.' }]
+      : messages.map((m: { role: string; content: string }) => ({
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+        }))
+
     const stream = await anthropic.messages.stream({
       model: 'claude-opus-4-5',
       max_tokens: 1024,
       system: SYSTEM_PROMPT,
-      messages: messages.map((m: { role: string; content: string }) => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-      })),
+      messages: claudeMessages,
     })
 
-    // Persist the latest user message to Supabase
-    const lastUserMessage = messages.findLast(
-      (m: { role: string }) => m.role === 'user'
-    )
-    if (lastUserMessage && sessionId) {
-      await supabase.from('messages').insert({
-        session_id: sessionId,
-        user_id: user.id,
-        role: 'user',
-        content: lastUserMessage.content,
-      })
+    // User-Nachricht in DB speichern — aber NICHT bei isGreeting
+    if (!isGreeting && sessionId) {
+      const lastUserMessage = messages.findLast(
+        (m: { role: string }) => m.role === 'user'
+      )
+      if (lastUserMessage) {
+        await supabase.from('messages').insert({
+          session_id: sessionId,
+          user_id: user.id,
+          role: 'user',
+          content: lastUserMessage.content,
+        })
+      }
     }
 
-    // Return SSE stream
     const encoder = new TextEncoder()
     let fullAssistantMessage = ''
 
@@ -66,7 +71,7 @@ export async function POST(request: Request) {
           }
         }
 
-        // Persist the complete assistant response
+        // KICO-Antwort immer speichern (auch Begrüßung)
         if (fullAssistantMessage && sessionId) {
           await supabase.from('messages').insert({
             session_id: sessionId,

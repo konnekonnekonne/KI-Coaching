@@ -18,9 +18,7 @@ export function InputBar({ onSend, disabled }: InputBarProps) {
     if (!trimmed || disabled) return
     onSend(trimmed)
     setValue('')
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
-    }
+    if (textareaRef.current) textareaRef.current.style.height = 'auto'
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -38,23 +36,23 @@ export function InputBar({ onSend, disabled }: InputBarProps) {
   }
 
   return (
-    <div className="border-t border-[--border] bg-[--background] px-4 py-4">
-      <div className="flex items-end gap-3 max-w-3xl mx-auto">
+    <div className="flex-shrink-0 border-t border-border bg-bg px-4 py-3">
+      <div className="flex items-end gap-2 max-w-3xl mx-auto">
         <textarea
           ref={textareaRef}
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={e => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
           onInput={handleInput}
           disabled={disabled}
           rows={1}
-          placeholder={disabled ? 'KICO antwortet…' : 'Deine Nachricht (Enter zum Senden)'}
+          placeholder={disabled ? 'KICO antwortet…' : 'Schreib etwas… (Enter zum Senden)'}
           className={cn(
-            'flex-1 resize-none rounded-2xl border border-[--border] bg-[--surface] px-4 py-3',
-            'text-sm text-[--foreground] placeholder:text-[--muted]',
-            'focus:outline-none focus:ring-2 focus:ring-[--accent]',
+            'flex-1 resize-none bg-surface border border-border rounded-xl px-4 py-2.5',
+            'font-sans text-sm text-kico-text placeholder:text-muted',
+            'focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary',
             'disabled:opacity-50 disabled:cursor-not-allowed',
-            'min-h-[48px] max-h-[160px] overflow-y-auto'
+            'min-h-[44px] max-h-[160px] overflow-y-auto transition-colors'
           )}
         />
         <button
@@ -62,16 +60,19 @@ export function InputBar({ onSend, disabled }: InputBarProps) {
           disabled={disabled || !value.trim()}
           aria-label="Senden"
           className={cn(
-            'flex-shrink-0 w-11 h-11 rounded-full bg-[--accent] flex items-center justify-center',
-            'text-white transition-colors hover:bg-[--accent-light]',
+            'flex-shrink-0 w-10 h-10 rounded-xl bg-primary',
+            'flex items-center justify-center text-white',
+            'hover:bg-primary-dark transition-colors',
             'disabled:opacity-40 disabled:cursor-not-allowed'
           )}
         >
-          <SendHorizontal size={18} />
+          <SendHorizontal size={16} />
         </button>
       </div>
-      <p className="text-xs text-center text-[--muted] mt-2">
-        KICO kann Fehler machen. Kein Ersatz für professionelle Beratung oder Psychotherapie.
+      <p className="caption text-center mt-2">
+        KICO ersetzt keine Psychotherapie.{' '}
+        <a href="tel:08001110111" className="text-primary hover:underline">0800 111 0 111</a>
+        {' '}bei Krisen (kostenlos, 24/7)
       </p>
     </div>
   )
