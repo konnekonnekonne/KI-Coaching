@@ -1,37 +1,137 @@
 @import "tailwindcss";
 
+/* ============================================================
+   KICO DESIGN TOKENS
+   Alle Werte hier ändern → ganze Plattform passt sich an
+   ============================================================ */
+
 :root {
-  --background: #f8f7f4;
-  --foreground: #1a1a2e;
-  --muted: #6b7280;
-  --accent: #2d6a4f;
-  --accent-light: #52b788;
-  --surface: #ffffff;
-  --border: #e5e7eb;
+  /* Kernfarben */
+  --bg:              #F5F7F5;
+  --primary:         #2D6A4F;
+  --primary-dark:    #235540;
+  --accent:          #52B788;
+  --text:            #1B2E25;
+  --muted:           #64748B;
+  --surface:         #FFFFFF;
+  --border:          #D8E6DE;
+
+  /* Signalfarben */
+  --signal-amber:    #D97706;
+  --signal-orange:   #C2410C;
+  --signal-red:      #B91C1C;
+  --signal-green:    #15803D;
+
+  /* Signalfarben (Hintergründe) */
+  --signal-amber-bg: #FEF3C7;
+  --signal-orange-bg:#FFEDD5;
+  --signal-red-bg:   #FEE2E2;
+  --signal-green-bg: #DCFCE7;
 }
+
+/* ============================================================
+   TAILWIND v4 THEME MAPPING
+   Macht alle Tokens als Tailwind-Klassen verfügbar:
+   bg-primary, text-muted, border-border usw.
+   ============================================================ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Farben */
+  --color-bg:              var(--bg);
+  --color-primary:         var(--primary);
+  --color-primary-dark:    var(--primary-dark);
+  --color-accent:          var(--accent);
+  --color-kico-text:       var(--text);
+  --color-muted:           var(--muted);
+  --color-surface:         var(--surface);
+  --color-border:          var(--border);
+
+  --color-signal-amber:    var(--signal-amber);
+  --color-signal-orange:   var(--signal-orange);
+  --color-signal-red:      var(--signal-red);
+  --color-signal-green:    var(--signal-green);
+
+  --color-signal-amber-bg: var(--signal-amber-bg);
+  --color-signal-orange-bg:var(--signal-orange-bg);
+  --color-signal-red-bg:   var(--signal-red-bg);
+  --color-signal-green-bg: var(--signal-green-bg);
+
+  /* Fonts */
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-sans:    var(--font-inter), system-ui, sans-serif;
+  --font-mono:    var(--font-geist-mono), monospace;
 }
+
+/* ============================================================
+   BASE
+   ============================================================ */
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-inter), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Chat scrollbar */
-.chat-scroll::-webkit-scrollbar {
-  width: 4px;
+/* ============================================================
+   TYPOGRAFIE-UTILITIES
+   Nutzung: className="heading-1" oder "body-text"
+   ============================================================ */
+
+.heading-1 {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--text);
 }
-.chat-scroll::-webkit-scrollbar-track {
-  background: transparent;
+
+.heading-2 {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--text);
 }
-.chat-scroll::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 2px;
+
+.heading-3 {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text);
 }
+
+.body-text {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.65;
+}
+
+.caption {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.label-text {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ============================================================
+   CHAT SCROLLBAR
+   ============================================================ */
+
+.chat-scroll::-webkit-scrollbar       { width: 4px; }
+.chat-scroll::-webkit-scrollbar-track { background: transparent; }
+.chat-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }

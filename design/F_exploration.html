@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KICO Design — F: Logo · Subline · Farben</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Core */
+      --bg:       #F5F7F5;
+      --primary:  #2D6A4F;
+      --accent:   #52B788;
+      --text:     #1B2E25;
+      --muted:    #64748B;   /* neutral slate — no longer greenish */
+      --surface:  #FFFFFF;
+      --border:   #D8E6DE;
+
+      /* Signal */
+      --signal-yellow: #D97706;   /* amber — warning, attention */
+      --signal-orange: #C2410C;   /* orange — strong CTA, urgency */
+      --signal-red:    #B91C1C;   /* red — error, danger */
+      --signal-green:  #15803D;   /* bright green — success */
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 0 32px; }
+
+    section {
+      padding: 56px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    section:last-child { border-bottom: none; }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .section-desc {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 36px;
+    }
+
+    /* =====================
+       LOGO GRID
+    ===================== */
+    .logo-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    @media (max-width: 600px) {
+      .logo-grid { grid-template-columns: 1fr; }
+    }
+
+    .logo-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 36px 28px 28px;
+    }
+
+    .logo-card-dark {
+      background: #1B2E25;
+      border-color: #1B2E25;
+    }
+
+    .logo-lockup {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .wordmark {
+      font-family: 'Fraunces', serif;
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--primary);
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .wordmark-light { color: #FFFFFF; }
+
+    .subline {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+      margin-top: 2px;
+    }
+    .subline-light { color: rgba(255,255,255,0.55); }
+
+    .logo-concept-name {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 16px;
+    }
+    .logo-concept-name-light { color: rgba(255,255,255,0.4); }
+
+    /* =====================
+       SVG ICONS
+    ===================== */
+
+    /* Concept 1: Ascending Nodes
+       3 circles rising diagonally, connected by lines → network/AI growth path */
+    .icon-nodes { width: 40px; height: 40px; }
+
+    /* Concept 2: Neural Sprout
+       A stem rising from a base node, branching at top into two arcs with node tips */
+    .icon-sprout { width: 40px; height: 40px; }
+
+    /* Concept 3: Growth Arc
+       Upward-curving arc with data-point dots along it — chart meets constellation */
+    .icon-arc { width: 40px; height: 40px; }
+
+    /* Concept 4: Helix Dot
+       Vertical column of dots spaced in a sine-wave pattern — DNA/data/flow */
+    .icon-helix { width: 40px; height: 40px; }
+
+    /* =====================
+       SUBLINE OPTIONS
+    ===================== */
+    .subline-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    .subline-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .subline-wordmark {
+      font-family: 'Fraunces', serif;
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .subline-option {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .subline-tag {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-top: 6px;
+    }
+
+    /* =====================
+       COLOR PALETTE
+    ===================== */
+    .palette-group { margin-bottom: 32px; }
+    .palette-group-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .swatch-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .swatch {
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      width: 110px;
+      flex-shrink: 0;
+    }
+
+    .swatch-color { height: 56px; }
+
+    .swatch-info {
+      background: var(--surface);
+      padding: 7px 10px;
+    }
+
+    .swatch-name {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .swatch-hex {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: monospace;
+      margin-top: 2px;
+    }
+
+    /* =====================
+       SIGNAL BUTTONS
+    ===================== */
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .btn {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 10px 22px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.18s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .btn-primary   { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover { background: #235540; border-color: #235540; }
+
+    .btn-secondary { background: transparent; color: var(--primary); border-color: var(--primary); }
+    .btn-secondary:hover { background: rgba(45,106,79,.07); }
+
+    .btn-cta       { background: var(--signal-orange); color: #fff; border-color: var(--signal-orange); }
+    .btn-cta:hover { background: #9A3409; border-color: #9A3409; }
+
+    .btn-warning   { background: #FEF3C7; color: var(--signal-yellow); border-color: #FCD34D; }
+    .btn-danger    { background: #FEE2E2; color: var(--signal-red);    border-color: #FCA5A5; }
+    .btn-success   { background: #DCFCE7; color: var(--signal-green);  border-color: #86EFAC; }
+
+    .btn-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .btn-group { display: flex; flex-direction: column; }
+
+    .buttons-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 16px;
+    }
+
+    /* =====================
+       CONTEXT EXAMPLES
+    ===================== */
+    .context-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .context-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: 6px;
+      width: fit-content;
+    }
+
+    .badge-warning { background: #FEF3C7; color: var(--signal-yellow); }
+    .badge-danger  { background: #FEE2E2; color: var(--signal-red); }
+    .badge-info    { background: #DBEAFE; color: #1D4ED8; }
+
+    .context-text {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .context-action {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--primary);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .context-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ===================== LOGO ===================== -->
+  <section>
+    <p class="section-label">Logo-Exploration</p>
+    <p class="section-desc">4 Konzepte — Wachstum × KI/Technologie. Hell und Dunkel-Variante.</p>
+
+    <div class="logo-grid">
+
+      <!-- CONCEPT 1: Ascending Nodes — light -->
+      <div class="logo-card">
+        <div class="logo-lockup">
+          <!-- 3 nodes, rising left-to-right, connected by lines. Clean neural/network feel. -->
+          <svg class="icon-nodes" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <line x1="8" y1="28" x2="20" y2="18" stroke="#2D6A4F" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="20" y1="18" x2="32" y2="10" stroke="#52B788" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="8"  cy="28" r="3.5" fill="#2D6A4F"/>
+            <circle cx="20" cy="18" r="3.5" fill="#2D6A4F"/>
+            <circle cx="32" cy="10" r="4.5" fill="#52B788"/>
+            <!-- small satellite node -->
+            <line x1="20" y1="18" x2="28" y2="24" stroke="#2D6A4F" stroke-width="1" stroke-linecap="round" stroke-dasharray="2 2"/>
+            <circle cx="28" cy="24" r="2" fill="#C8DDD0"/>
+          </svg>
+          <div>
+            <div class="wordmark">kico</div>
+            <div class="subline">Dein KI-Coach</div>
+          </div>
+        </div>
+        <p class="logo-concept-name">① Ascending Nodes — Wachstumspfad als Netzwerk</p>
+      </div>
+
+      <!-- CONCEPT 1: dark -->
+      <div class="logo-card logo-card-dark">
+        <div class="logo-lockup">
+          <svg class="icon-nodes" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <line x1="8" y1="28" x2="20" y2="18" stroke="#52B788" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="20" y1="18" x2="32" y2="10" stroke="#95D5B2" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="8"  cy="28" r="3.5" fill="#52B788"/>
+            <circle cx="20" cy="18" r="3.5" fill="#52B788"/>
+            <circle cx="32" cy="10" r="4.5" fill="#95D5B2"/>
+            <line x1="20" y1="18" x2="28" y2="24" stroke="#52B788" stroke-width="1" stroke-linecap="round" stroke-dasharray="2 2"/>
+            <circle cx="28" cy="24" r="2" fill="rgba(149,213,178,0.3)"/>
+          </svg>
+          <div>
+            <div class="wordmark wordmark-light">kico</div>
+            <div class="subline subline-light">Dein KI-Coach</div>
+          </div>
+        </div>
+        <p class="logo-concept-name logo-concept-name-light">① Dark-Variante</p>
+      </div>
+
+      <!-- CONCEPT 2: Neural Sprout — light -->
+      <div class="logo-card">
+        <div class="logo-lockup">
+          <!-- Seed/root at bottom, stem rising, two branches with node-tips -->
+          <svg class="icon-sprout" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- root base -->
+            <circle cx="20" cy="33" r="3" fill="#2D6A4F" opacity="0.3"/>
+            <!-- stem -->
+            <line x1="20" y1="33" x2="20" y2="14" stroke="#2D6A4F" stroke-width="2" stroke-linecap="round"/>
+            <!-- left branch -->
+            <path d="M20 20 Q14 16 11 11" stroke="#2D6A4F" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+            <!-- right branch -->
+            <path d="M20 16 Q26 12 29 8" stroke="#52B788" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+            <!-- top node — main growth point -->
+            <circle cx="20" cy="11" r="4" fill="#52B788"/>
+            <!-- branch node tips -->
+            <circle cx="11" cy="11" r="2.5" fill="#2D6A4F"/>
+            <circle cx="29" cy="8"  r="3"   fill="#52B788" opacity="0.7"/>
+            <!-- small circuit detail on stem -->
+            <line x1="20" y1="25" x2="24" y2="25" stroke="#C8DDD0" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="24" cy="25" r="1.5" fill="#C8DDD0"/>
+          </svg>
+          <div>
+            <div class="wordmark">kico</div>
+            <div class="subline">Dein KI-Coach</div>
+          </div>
+        </div>
+        <p class="logo-concept-name">② Neural Sprout — organisches Wachstum mit Technologie-Details</p>
+      </div>
+
+      <!-- CONCEPT 2: dark -->
+      <div class="logo-card logo-card-dark">
+        <div class="logo-lockup">
+          <svg class="icon-sprout" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="33" r="3" fill="#52B788" opacity="0.2"/>
+            <line x1="20" y1="33" x2="20" y2="14" stroke="#52B788" stroke-width="2" stroke-linecap="round"/>
+            <path d="M20 20 Q14 16 11 11" stroke="#52B788" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+            <path d="M20 16 Q26 12 29 8" stroke="#95D5B2" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+            <circle cx="20" cy="11" r="4" fill="#95D5B2"/>
+            <circle cx="11" cy="11" r="2.5" fill="#52B788"/>
+            <circle cx="29" cy="8"  r="3"   fill="#95D5B2" opacity="0.7"/>
+            <line x1="20" y1="25" x2="24" y2="25" stroke="rgba(149,213,178,0.3)" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="24" cy="25" r="1.5" fill="rgba(149,213,178,0.3)"/>
+          </svg>
+          <div>
+            <div class="wordmark wordmark-light">kico</div>
+            <div class="subline subline-light">Dein KI-Coach</div>
+          </div>
+        </div>
+        <p class="logo-concept-name logo-concept-name-light">② Dark-Variante</p>
+      </div>
+
+      <!-- CONCEPT 3: Growth Arc — light -->
+      <div class="logo-card">
+        <div class="logo-lockup">
+          <!-- Upward arc with constellation dots — data chart meets star map -->
+          <svg class="icon-arc" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- arc path -->
+            <path d="M6 30 Q14 10 34 8" stroke="#2D6A4F" stroke-width="2" stroke-linecap="round" fill="none"/>
+            <!-- data points on the arc -->
+            <circle cx="6"  cy="30" r="2.5" fill="#2D6A4F"/>
+            <circle cx="14" cy="18" r="2.5" fill="#2D6A4F"/>
+            <circle cx="24" cy="11" r="2.5" fill="#52B788"/>
+            <circle cx="34" cy="8"  r="4"   fill="#52B788"/>
+            <!-- grid lines (subtle, suggests data/tech) -->
+            <line x1="6"  y1="34" x2="6"  y2="30" stroke="#C8DDD0" stroke-width="1"/>
+            <line x1="14" y1="34" x2="14" y2="18" stroke="#C8DDD0" stroke-width="1"/>
+            <line x1="24" y1="34" x2="24" y2="11" stroke="#C8DDD0" stroke-width="1"/>
+            <line x1="34" y1="34" x2="34" y2="8"  stroke="#C8DDD0" stroke-width="1"/>
+          </svg>
+          <div>
+            <div class="wordmark">kico</div>
+            <div class="subline">Dein KI-Coach</div>
+          </div>
+        </div>
+        <p class="logo-concept-name">③ Growth Arc — Wachstumskurve mit Datenpunkten</p>
+      </div>
+
+      <!-- CONCEPT 3: dark -->
+      <div class="logo-card logo-card-dark">
+        <div class="logo-lockup">
+          <svg class="icon-arc" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 30 Q14 10 34 8" stroke="#52B788" stroke-width="2" stroke-linecap="round" fill="none"/>
+            <circle cx="6"  cy="30" r="2.5" fill="#52B788"/>
+            <circle cx="14" cy="18" r="2.5" fill="#52B788"/>
+            <circle cx="24" cy="11" r="2.5" fill="#95D5B2"/>
+            <circle cx="34" cy="8"  r="4"   fill="#95D5B2"/>
+            <line x1="6"  y1="34" x2="6"  y2="30" stroke="rgba(149,213,178,0.2)" stroke-width="1"/>
+            <line x1="14" y1="34" x2="14" y2="18" stroke="rgba(149,213,178,0.2)" stroke-width="1"/>
+            <line x1="24" y1="34" x2="24" y2="11" stroke="rgba(149,213,178,0.2)" stroke-width="1"/>
+            <line x1="34" y1="34" x2="34" y2="8"  stroke="rgba(149,213,178,0.2)" stroke-width="1"/>
+          </svg>
+          <div>
+            <div class="wordmark wordmark-light">kico</div>
+            <div class="subline subline-light">Dein KI-Coach</div>
+          </div>
+        </div>
+        <p class="logo-concept-name logo-concept-name-light">③ Dark-Variante</p>
+      </div>
+
+      <!-- CONCEPT 4: Helix / Pulse — light -->
+      <div class="logo-card">
+        <div class="logo-lockup">
+          <!-- EKG/pulse line that rises into an upward trend — AI heartbeat of growth -->
+          <svg class="icon-helix" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- baseline pulse -->
+            <polyline points="4,28 10,28 13,18 16,32 19,14 22,32 25,22 28,28 34,10 38,10"
+              stroke="#2D6A4F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <!-- upward trend overlay -->
+            <line x1="4" y1="32" x2="38" y2="8" stroke="#52B788" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+            <!-- peak highlight -->
+            <circle cx="19" cy="14" r="3" fill="#52B788"/>
+            <circle cx="34" cy="10" r="2.5" fill="#52B788" opacity="0.6"/>
+          </svg>
+          <div>
+            <div class="wordmark">kico</div>
+            <div class="subline">Dein KI-Coach</div>
+          </div>
+        </div>
+        <p class="logo-concept-name">④ Growth Pulse — KI-Signal trifft Wachstumstrend</p>
+      </div>
+
+      <!-- CONCEPT 4: dark -->
+      <div class="logo-card logo-card-dark">
+        <div class="logo-lockup">
+          <svg class="icon-helix" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="4,28 10,28 13,18 16,32 19,14 22,32 25,22 28,28 34,10 38,10"
+              stroke="#52B788" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <line x1="4" y1="32" x2="38" y2="8" stroke="#95D5B2" stroke-width="1" stroke-dasharray="3 3" opacity="0.4"/>
+            <circle cx="19" cy="14" r="3" fill="#95D5B2"/>
+            <circle cx="34" cy="10" r="2.5" fill="#95D5B2" opacity="0.6"/>
+          </svg>
+          <div>
+            <div class="wordmark wordmark-light">kico</div>
+            <div class="subline subline-light">Dein KI-Coach</div>
+          </div>
+        </div>
+        <p class="logo-concept-name logo-concept-name-light">④ Dark-Variante</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===================== SUBLINE ===================== -->
+  <section>
+    <p class="section-label">Subline-Varianten</p>
+    <p class="section-desc">Was steht unter „kico"? Von funktional bis emotional.</p>
+
+    <div class="subline-grid">
+      <div class="subline-card">
+        <div class="subline-wordmark">kico</div>
+        <div class="subline-option">Dein KI-Coach</div>
+        <div class="subline-tag">Direkt · Aktuell</div>
+      </div>
+      <div class="subline-card">
+        <div class="subline-wordmark">kico</div>
+        <div class="subline-option">KI-Coaching. Jederzeit.</div>
+        <div class="subline-tag">Verfügbarkeit betont</div>
+      </div>
+      <div class="subline-card">
+        <div class="subline-wordmark">kico</div>
+        <div class="subline-option">Coaching mit KI-Unterstützung</div>
+        <div class="subline-tag">Erklärender Ansatz</div>
+      </div>
+      <div class="subline-card">
+        <div class="subline-wordmark">kico</div>
+        <div class="subline-option">Systemisches Coaching · KI-gestützt</div>
+        <div class="subline-tag">Methodisch · Für Kenner</div>
+      </div>
+      <div class="subline-card">
+        <div class="subline-wordmark">kico</div>
+        <div class="subline-option">Wachsen. Reflektieren. Verändern.</div>
+        <div class="subline-tag">Emotional · Prozess-orientiert</div>
+      </div>
+      <div class="subline-card">
+        <div class="subline-wordmark">kico</div>
+        <div class="subline-option">Dein Coach ist immer da.</div>
+        <div class="subline-tag">Empathisch · Vertrauensvoll</div>
+      </div>
+      <div class="subline-card">
+        <div class="subline-wordmark">kico</div>
+        <div class="subline-option">KI-Coach für deinen nächsten Schritt</div>
+        <div class="subline-tag">Handlungsorientiert</div>
+      </div>
+      <div class="subline-card">
+        <div class="subline-wordmark">kico</div>
+        <div class="subline-option">Wo Reflexion auf Technologie trifft</div>
+        <div class="subline-tag">Positionierung · Differenzierung</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FARBEN ===================== -->
+  <section>
+    <p class="section-label">Überarbeitetes Farbsystem</p>
+    <p class="section-desc">Kernfarben bleiben grün — Muted ist jetzt neutral (kein Grün). Signal-Farben für CTAs, Warnungen, Fehler.</p>
+
+    <div class="palette-group">
+      <div class="palette-group-label">Kernpalette</div>
+      <div class="swatch-row">
+        <div class="swatch">
+          <div class="swatch-color" style="background:#F5F7F5; border-bottom:1px solid #D8E6DE;"></div>
+          <div class="swatch-info"><div class="swatch-name">Background</div><div class="swatch-hex">#F5F7F5</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#2D6A4F;"></div>
+          <div class="swatch-info"><div class="swatch-name">Primary</div><div class="swatch-hex">#2D6A4F</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#52B788;"></div>
+          <div class="swatch-info"><div class="swatch-name">Accent</div><div class="swatch-hex">#52B788</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#1B2E25;"></div>
+          <div class="swatch-info"><div class="swatch-name">Text</div><div class="swatch-hex">#1B2E25</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#64748B;"></div>
+          <div class="swatch-info"><div class="swatch-name">Muted</div><div class="swatch-hex">#64748B</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#FFFFFF; border-bottom:1px solid #D8E6DE;"></div>
+          <div class="swatch-info"><div class="swatch-name">Surface</div><div class="swatch-hex">#FFFFFF</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#D8E6DE;"></div>
+          <div class="swatch-info"><div class="swatch-name">Border</div><div class="swatch-hex">#D8E6DE</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="palette-group">
+      <div class="palette-group-label">Signal-Farben</div>
+      <div class="swatch-row">
+        <div class="swatch">
+          <div class="swatch-color" style="background:#D97706;"></div>
+          <div class="swatch-info"><div class="swatch-name">Amber</div><div class="swatch-hex">#D97706</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#C2410C;"></div>
+          <div class="swatch-info"><div class="swatch-name">Orange</div><div class="swatch-hex">#C2410C</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#B91C1C;"></div>
+          <div class="swatch-info"><div class="swatch-name">Rot</div><div class="swatch-hex">#B91C1C</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#15803D;"></div>
+          <div class="swatch-info"><div class="swatch-name">Erfolg</div><div class="swatch-hex">#15803D</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== BUTTONS + KONTEXT ===================== -->
+  <section>
+    <p class="section-label">Buttons & Signal-Kontexte</p>
+    <p class="section-desc">Wann welche Farbe eingesetzt wird.</p>
+
+    <div class="btn-row" style="margin-bottom:28px;">
+      <div class="btn-group">
+        <button class="btn btn-primary">Sitzung starten</button>
+        <span class="btn-label">Primär-Aktion</span>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-secondary">Mehr erfahren</button>
+        <span class="btn-label">Sekundär</span>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-cta">Jetzt registrieren →</button>
+        <span class="btn-label">Starker CTA (Orange)</span>
+      </div>
+    </div>
+
+    <div class="context-grid">
+      <div class="context-card">
+        <span class="context-badge badge-warning">⚠ Hinweis</span>
+        <p class="context-text">KICO ersetzt keine professionelle Psychotherapie. Bei anhaltenden Beschwerden wende dich an Fachpersonen.</p>
+        <span class="context-action">Mehr erfahren</span>
+      </div>
+      <div class="context-card">
+        <span class="context-badge badge-danger">✕ Krisensignal erkannt</span>
+        <p class="context-text">Es klingt, als befindest du dich gerade in einer schwierigen Lage. Bitte ruf die Telefonseelsorge an: 0800 111 0 111</p>
+        <span class="context-action">Sofort Hilfe holen</span>
+      </div>
+      <div class="context-card">
+        <span class="context-badge badge-info">✓ Session gespeichert</span>
+        <p class="context-text">Deine Sitzung vom heute wurde gespeichert. Du kannst jederzeit weitermachen.</p>
+        <span class="context-action">Session ansehen</span>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div style="text-align:center; padding:32px; font-family:'Inter',sans-serif; font-size:12px; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase;">
+  Design F — Logo · Subline · Farbsystem · KICO Exploration
+</div>
+
+</body>
+</html>
