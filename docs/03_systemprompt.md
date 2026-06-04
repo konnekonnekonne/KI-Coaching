@@ -12,7 +12,7 @@ Bei KICO ist der Systemprompt die zentrale Stelle, an der das Architekturprinzip
 
 ## Aufbau des KICO-Systemprompts
 
-Der Prompt ist in sechs Abschnitte gegliedert, die direkt den Qualitätsnormen (QN-01 bis QN-09) aus der Abschlussarbeit entsprechen:
+Der Prompt ist in sieben Abschnitte gegliedert, die direkt den Qualitätsnormen (QN-01 bis QN-09) aus der Abschlussarbeit entsprechen:
 
 ### 1. Rollenklarheit (QN-04)
 Definiert, was KICO ist und — explizit — was nicht:

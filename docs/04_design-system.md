@@ -185,6 +185,39 @@ import { Badge } from '@/components/ui'
 
 ---
 
+## Dark Mode
+
+Die Plattform unterstützt Light- und Dark Mode. Umschalten erfolgt über die `ThemeToggle`-Komponente.
+
+**Implementierung:** Die Präferenz wird in `localStorage` unter `kico-theme` gespeichert. Ein Inline-Script in `app/layout.tsx` liest den Wert vor dem ersten Paint und setzt die `dark`-Klasse auf `<html>` — verhindert Flash beim Laden. Ohne gespeicherte Präferenz wird `prefers-color-scheme` des Betriebssystems ausgewertet.
+
+**Dark-Mode-Tokens** (in `globals.css` unter `.dark`):
+
+| Token | Light | Dark |
+|-------|-------|------|
+| `--bg` | `#F5F7F5` | `#111816` |
+| `--surface` | `#FFFFFF` | `#1A2620` |
+| `--border` | `#D8E6DE` | `#2A3D33` |
+| `--text` | `#1B2E25` | `#E2EDE6` |
+| `--muted` | `#64748B` | `#7A9486` |
+| `--primary` | `#2D6A4F` | `#52B788` |
+| `--on-primary` | `#FFFFFF` | `#111816` |
+
+`--on-primary` löst das Kontrast-Problem: Im Light Mode steht weißer Text auf dunklem Primary, im Dark Mode dunkler Text auf hellem Primary. Immer mindestens 4.5:1 Kontrast.
+
+**ThemeToggle-Komponente:**
+
+```tsx
+import { ThemeToggle } from '@/components/ui'
+
+<ThemeToggle />
+// Rendert: "Ich mag's lieber [hell/dunkel]" mit Sliding-Pill
+```
+
+Platzierung: über der „Neue Session"-Box im Dashboard (nicht im Header — bewusste Entscheidung: gehört zum Interface, nicht zur Navigation).
+
+---
+
 ## Seitenstruktur
 
 Jede neue Seite folgt diesem Grundgerüst:
@@ -248,6 +281,7 @@ components/ui/
   Button.tsx                     ← Button mit allen Varianten
   Input.tsx                      ← Input mit Label, Hint, Error
   Badge.tsx                      ← Signal-Badges
+  ThemeToggle.tsx                ← Hell/Dunkel-Umschalter
 public/logo/
   icon-green.svg                 ← Icon (Standard)
   icon-white.svg                 ← Icon (Dunkel)

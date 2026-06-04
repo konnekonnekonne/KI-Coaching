@@ -17,11 +17,14 @@ Wird automatisch beim Registrieren angelegt (via Datenbank-Trigger).
 |--------|-----|--------------|
 | `id` | uuid (PK) | Entspricht `auth.users.id` |
 | `email` | text | E-Mail-Adresse der Nutzerin |
+| `first_name` | text | Vorname (nullable; wird im Onboarding einmalig abgefragt) |
 | `created_at` | timestamptz | Registrierungszeitpunkt |
 | `updated_at` | timestamptz | Letzte Änderung |
 
+**Onboarding-Flow:** Beim ersten Login ist `first_name` null. Das Dashboard erkennt das und zeigt eine Maske „Wie darf ich dich nennen?". Nach Eingabe wird `profiles.first_name` per Client-Update gesetzt — kein separater API-Endpunkt nötig (RLS erlaubt eigene Zeile zu schreiben). Migration: `002_add_firstname.sql`.
+
 ### `sessions`
-Eine Coaching-Session pro Gespräch. Aktuell wird pro Tag eine Session angelegt.
+Eine Coaching-Session pro Gespräch. Jeder Klick auf „Session starten" im Dashboard erzeugt eine neue Session.
 
 | Spalte | Typ | Beschreibung |
 |--------|-----|--------------|

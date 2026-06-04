@@ -21,10 +21,17 @@ interface SessionShellProps {
 type Mode = 'choose' | 'text' | 'voice'
 
 export function SessionShell({ sessionId, initialMessages }: SessionShellProps) {
-  // Hat die Session bereits Nachrichten? Direkt in Text-Modus
-  const [mode, setMode] = useState<Mode>(
-    initialMessages.length > 0 ? 'text' : 'choose'
-  )
+  // Modus aus sessionStorage lesen (vom Dashboard gesetzt), sonst Moduswahl zeigen
+  function getInitialMode(): Mode {
+    if (initialMessages.length > 0) return 'text'
+    try {
+      const saved = sessionStorage.getItem(`kico-mode-${sessionId}`)
+      if (saved === 'voice') return 'voice'
+      if (saved === 'text') return 'text'
+    } catch { /* SSR oder privater Modus */ }
+    return 'choose'
+  }
+  const [mode, setMode] = useState<Mode>(getInitialMode)
 
   if (mode === 'text' || initialMessages.length > 0 && mode !== 'voice') {
     return (

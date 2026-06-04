@@ -80,15 +80,25 @@ Die OpenAI Realtime Beta API wurde am 12. Mai 2026 abgeschaltet. Die GA-Version 
     "model": "gpt-realtime-2",
     "instructions": "[KICO System-Prompt]",
     "audio": {
-      "output": { "voice": "alloy" }
-    },
+      "output": { "voice": "shimmer" }
+    }
+  }
+}
+```
+
+`turn_detection` und `input_audio_transcription` werden **nicht** im `client_secrets`-Call gesetzt (GA-API erlaubt das nicht), sondern nach Verbindungsaufbau via DataChannel-Event `session.update`:
+
+```json
+{
+  "type": "session.update",
+  "session": {
     "turn_detection": {
       "type": "semantic_vad",
-      "silence_duration_ms": 1200,
-      "threshold": 0.5
+      "silence_duration_ms": 1800,
+      "threshold": 0.8
     },
     "input_audio_transcription": {
-      "model": "gpt-4o-mini-transcribe",
+      "model": "whisper-1",
       "language": "de"
     }
   },
@@ -108,10 +118,10 @@ Alle einfachen Voice-Systeme verwenden energiebasierte Voice Activity Detection 
 **Semantic VAD** (OpenAI, seit 2025/2026) bewertet stattdessen, ob eine Äußerung semantisch abgeschlossen ist. Ein „ähm…" oder eine Denkpause wird nicht als Ende interpretiert.
 
 Konfiguration für den Coaching-Kontext:
-- `silence_duration_ms: 1200` — 1,2 Sekunden Toleranz (Standard wäre 500ms)
-- Threshold `0.5` — mittlere Empfindlichkeit
+- `silence_duration_ms: 1800` — 1,8 Sekunden Toleranz (Standard wäre 500ms) — mehr Raum für Denkpausen
+- Threshold `0.8` — hohe Schwelle, weniger sensitiv bei Hintergrundgeräuschen
 
-**Schweige-Signal ab 3 Sekunden:** Eine Applikationsschicht erkennt Schweigen über 1,2 Sekunden hinaus und sendet ein kurzes akustisches Präsenzsignal. Diese Entscheidung ist methodisch begründet: Im systemischen Coaching ist Stille ein Werkzeug. Jedes sprachliche Signal wäre eine Intervention. Ein nicht-sprachliches Geräusch signalisiert Präsenz ohne Erwartungsdruck. Die genaue Gestaltung dieses Signals bleibt eine offene Designfrage für die Evaluation.
+**Schweige-Signal:** Methodisch wäre ein nicht-sprachliches Präsenzsignal bei längerem Schweigen sinnvoll (Stille als Werkzeug, nicht als Leere). Diese Funktion ist in der aktuellen Implementierung **nicht realisiert** — sie bleibt als offene Designfrage für eine Folgeversion notiert.
 
 ---
 

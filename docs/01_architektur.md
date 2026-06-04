@@ -40,7 +40,11 @@ Nutzer (Browser)
 │  └────────────────┘  │
 │                      │
 │  ┌────────────────┐  │
-│  │  /session      │  │  ← Server Component: lädt User + Sessiondaten
+│  │  /session      │  │  ← Dashboard-Lobby: Begrüßung, Session-Liste, neue Session starten
+│  └────────────────┘  │
+│                      │
+│  ┌────────────────┐  │
+│  │  /session/[id] │  │  ← Coaching-Session: lädt SessionShell (Text oder Voice)
 │  └────────────────┘  │
 │                      │
 │  ┌────────────────┐  │
@@ -68,8 +72,11 @@ Nutzer (Browser)
 
 ## Wichtige Architekturentscheidungen
 
-### Server Components für die Session-Seite
-Die Seite `/session` ist ein React Server Component. Das bedeutet: Auth-Prüfung, Datenbankabfragen (bestehende Nachrichten laden) und Rendering passieren auf dem Server, bevor der Browser irgendwas sieht. Keine sensiblen Daten im Client-Bundle.
+### Session-Routing: Lobby → Coaching
+Der Einstieg nach dem Login ist `/session` — eine Dashboard-Lobby. Dort wählt der Nutzer den Modus (Text/Voice) und klickt „Session starten". Das Dashboard erzeugt eine neue Session in Supabase und navigiert zu `/session/[id]`. Die Detail-Route lädt die Session-Daten, prüft die Ownership (RLS + explizites `user_id`-Filter) und rendert `SessionShell`. Der gewählte Modus wird via `sessionStorage` übergeben.
+
+### Server Components für die Session-Seiten
+Beide Routen (`/session` und `/session/[id]`) sind React Server Components. Auth-Prüfung, Datenbankabfragen und Rendering passieren auf dem Server. Keine sensiblen Daten im Client-Bundle.
 
 ### SSE statt WebSockets
 Die Chat-Antworten werden als Server-Sent Events gestreamt. SSE ist unidirektional (Server → Client), reicht für diesen Anwendungsfall vollständig aus und ist deutlich einfacher zu implementieren und zu betreiben als WebSockets.
@@ -92,12 +99,15 @@ Der Anthropic API-Key verlässt den Server nie. Alle Claude-Anfragen laufen übe
 │   │   ├── login/page.tsx          # Anmeldung
 │   │   └── signup/page.tsx         # Registrierung
 │   ├── (dashboard)/
-│   │   └── session/page.tsx        # Coaching-Session
+│   │   ├── session/page.tsx        # Dashboard-Lobby: Profil, Sessions laden, neue Session starten
+│   │   └── session/[id]/page.tsx   # Coaching-Session (Text oder Voice)
 │   └── api/
 │       ├── chat/route.ts           # Claude-Streaming-Endpunkt (Text)
 │       ├── voice/session/route.ts  # Ephemeral Key für WebRTC (Voice)
 │       └── auth/callback/route.ts  # Supabase OAuth-Callback
 ├── components/
+│   ├── dashboard/
+│   │   └── Dashboard.tsx           # Lobby: Onboarding, zeitbasierte Begrüßung, Session-Liste
 │   └── chat/
 │       ├── SessionShell.tsx        # Moduswahl (Text / Voice) + Wrapper
 │       ├── ChatWindow.tsx          # Text-Modus: State, Streaming-Logik
@@ -113,6 +123,7 @@ Der Anthropic API-Key verlässt den Server nie. Alle Claude-Anfragen laufen übe
 ├── proxy.ts                        # Auth-Middleware (Next.js 16)
 ├── supabase/
 │   └── migrations/
-│       └── 001_initial.sql         # Datenbankschema + RLS
+│       ├── 001_initial.sql         # Datenbankschema + RLS
+│       └── 002_add_firstname.sql   # first_name in profiles
 └── docs/                           # Diese Dokumentation
 ```

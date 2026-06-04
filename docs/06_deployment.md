@@ -27,7 +27,8 @@ Die Anwendung benötigt vier Umgebungsvariablen, die in Netlify unter *Site sett
 |----------|--------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | URL des Supabase-Projekts |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Öffentlicher Supabase-Schlüssel (für Browser-Client) |
-| `ANTHROPIC_API_KEY` | Geheimer Anthropic-API-Schlüssel (nur serverseitig) |
+| `ANTHROPIC_API_KEY` | Geheimer Anthropic-API-Schlüssel (nur serverseitig, Text-Modus) |
+| `OPENAI_API_KEY` | Geheimer OpenAI-API-Schlüssel (nur serverseitig, Voice-Modus) |
 | `NEXT_PUBLIC_SITE_URL` | Öffentliche URL der Plattform |
 
 Variablen mit dem Präfix `NEXT_PUBLIC_` werden zur Build-Zeit in den Client-Bundle eingebettet und sind im Browser sichtbar. Der `ANTHROPIC_API_KEY` trägt dieses Präfix bewusst nicht — er verlässt den Server nie.
@@ -74,6 +75,7 @@ Nach dem ersten Deployment muss das Datenbankschema einmalig angelegt werden:
 
 1. Supabase SQL-Editor öffnen
 2. Inhalt von `supabase/migrations/001_initial.sql` einfügen und ausführen
+3. Inhalt von `supabase/migrations/002_add_firstname.sql` einfügen und ausführen
 
 Außerdem muss die Redirect-URL für die E-Mail-Bestätigung konfiguriert werden:
 
