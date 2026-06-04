@@ -76,11 +76,32 @@ function NameOnboarding({ userId }: { userId: string }) {
 
 // ── Dashboard-Inhalt ────────────────────────────────────────────────────────
 
+function getGreeting(firstName: string): { heading: string; sub: string } {
+  const hour = new Date().getHours()
+  if (hour >= 5 && hour < 12) return {
+    heading: `Guten Morgen, ${firstName}.`,
+    sub: 'Was nimmst du dir für heute vor?',
+  }
+  if (hour >= 12 && hour < 18) return {
+    heading: `Guten Tag, ${firstName}.`,
+    sub: 'Was möchtest du heute erkunden?',
+  }
+  if (hour >= 18 && hour < 22) return {
+    heading: `Guten Abend, ${firstName}.`,
+    sub: 'Wie war dein Tag bisher?',
+  }
+  return {
+    heading: `Noch wach, ${firstName}?`,
+    sub: 'Was lässt dich heute nicht los?',
+  }
+}
+
 function DashboardContent({ firstName, sessions, userId }: { firstName: string; sessions: Session[]; userId: string }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [mode, setMode] = useState<'text' | 'voice'>('text')
   const supabase = createClient()
+  const greeting = getGreeting(firstName)
 
   async function startNewSession() {
     const { data: session } = await supabase
@@ -106,10 +127,10 @@ function DashboardContent({ firstName, sessions, userId }: { firstName: string; 
       {/* ── Begrüßung ── */}
       <div>
         <h1 className="heading-2 mb-1">
-          Guten Tag, {firstName}.
+          {greeting.heading}
         </h1>
         <p className="body-text text-muted">
-          Was möchtest du heute erkunden?
+          {greeting.sub}
         </p>
       </div>
 
