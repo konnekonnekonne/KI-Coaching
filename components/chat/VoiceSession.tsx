@@ -282,11 +282,6 @@ export function VoiceSession({ sessionId, onEnd }: VoiceSessionProps) {
 
       </div>
 
-      <p className="caption text-center text-muted">
-        KICO ersetzt keine Psychotherapie.{' '}
-        <a href="tel:08001110111" className="text-primary hover:underline">0800 111 0 111</a>
-        {' '}bei Krisen (kostenlos, 24/7)
-      </p>
     </div>
   )
 }

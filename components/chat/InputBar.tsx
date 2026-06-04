@@ -69,11 +69,6 @@ export function InputBar({ onSend, disabled }: InputBarProps) {
           <SendHorizontal size={16} />
         </button>
       </div>
-      <p className="caption text-center mt-2">
-        KICO ersetzt keine Psychotherapie.{' '}
-        <a href="tel:08001110111" className="text-primary hover:underline">0800 111 0 111</a>
-        {' '}bei Krisen (kostenlos, 24/7)
-      </p>
     </div>
   )
 }
