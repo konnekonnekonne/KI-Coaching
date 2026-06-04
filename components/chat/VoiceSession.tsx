@@ -25,6 +25,14 @@ export function VoiceSession({ sessionId, onEnd }: VoiceSessionProps) {
   const dataChannelRef = useRef<RTCDataChannel | null>(null)
 
   const supabase = createClient()
+  const userIdRef = useRef<string | null>(null)
+
+  // User-ID beim Mount laden
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      userIdRef.current = data.user?.id ?? null
+    })
+  }, [supabase])
 
   // Verbindung aufbauen
   const connect = useCallback(async () => {
@@ -81,8 +89,8 @@ export function VoiceSession({ sessionId, onEnd }: VoiceSessionProps) {
           session: {
             turn_detection: {
               type: 'semantic_vad',
-              silence_duration_ms: 1200,
-              threshold: 0.5,
+              silence_duration_ms: 1800, // mehr Toleranz für Denkpausen
+              threshold: 0.8,            // weniger sensibel bei Hintergrundgeräuschen
             },
             input_audio_transcription: {
               model: 'whisper-1',
@@ -139,6 +147,9 @@ export function VoiceSession({ sessionId, onEnd }: VoiceSessionProps) {
     try {
       const event = JSON.parse(e.data)
 
+      // Alle Events loggen für Debugging
+      console.log('[Voice DC]', event.type)
+
       // Sprecherstatus tracken
       if (event.type === 'input_audio_buffer.speech_started') {
         setSpeakerState('user')
@@ -153,28 +164,38 @@ export function VoiceSession({ sessionId, onEnd }: VoiceSessionProps) {
       // Transkripte speichern
       if (event.type === 'conversation.item.input_audio_transcription.completed') {
         const text = event.transcript
+        console.log('[Voice DC] User transcript:', text, '| user_id:', userIdRef.current)
         if (text?.trim()) {
           setTranscript(text)
-          await supabase.from('messages').insert({
+          const { error } = await supabase.from('messages').insert({
             session_id: sessionId,
+            user_id: userIdRef.current,
             role: 'user',
             content: text,
           })
+          if (error) console.error('[Voice DB] User insert error:', error.message, error.code)
+          else console.log('[Voice DB] User message saved ✓')
         }
       }
 
       if (event.type === 'response.audio_transcript.done') {
         const text = event.transcript
+        console.log('[Voice DC] KICO transcript:', text, '| user_id:', userIdRef.current)
         if (text?.trim()) {
-          await supabase.from('messages').insert({
+          const { error } = await supabase.from('messages').insert({
             session_id: sessionId,
+            user_id: userIdRef.current,
             role: 'assistant',
             content: text,
           })
+          if (error) console.error('[Voice DB] KICO insert error:', error.message, error.code)
+          else console.log('[Voice DB] KICO message saved ✓')
         }
       }
 
-    } catch { /* ignore parse errors */ }
+    } catch (err) {
+      console.error('[Voice DC] Parse error:', err)
+    }
   }, [sessionId, supabase])
 
   // Cleanup

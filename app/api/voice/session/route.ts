@@ -32,7 +32,7 @@ export async function POST() {
           instructions: SYSTEM_PROMPT,
           audio: {
             output: {
-              voice: 'alloy',
+              voice: 'shimmer', // energischer als alloy, gut für Deutsch
             },
           },
         },

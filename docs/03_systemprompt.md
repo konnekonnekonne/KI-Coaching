@@ -63,11 +63,24 @@ Phasenwechsel werden für die Nutzerin transparent benannt.
 - Keine politischen oder weltanschaulichen Kommentare
 - Transparenz über eigene Grenzen
 
+### 7. Sprachausgabe (Voice-Modus) — hinzugefügt 04.06.2026
+Der Systemprompt enthält seit der Voice-Integration explizite Regeln für gesprochene Ausgabe. Da das Modell seinen Output laut vorgelesen bekommt, müssen Antworten für das Ohr, nicht für das Auge strukturiert sein:
+- Keine Markdown-Formatierungen (Sternchen, Aufzählungszeichen)
+- Keine Listen — stattdessen zusammenhängende Sätze
+- Du-Form durchgehend
+- Gesprächssprache ("Du hast gesagt…" statt "Sie erwähnten…")
+
+**Forschungsnotiz:** Das verwendete Sprachmodell (`gpt-realtime-2`) ist primär englischsprachig trainiert. Obwohl es korrektes Deutsch produziert, trägt die Stimme teilweise amerikanische Intonationsmuster. Dieser Effekt ist technisch nicht durch den Systemprompt steuerbar — er ist eine Eigenschaft des TTS-Layers (Stimme: `shimmer`), nicht des Sprachmodells. Er wird als bekannte Limitation dokumentiert.
+
 ---
 
 ## Implementierung
 
-Der Systemprompt liegt in `lib/system-prompt.ts` und wird als Konstante in die API-Route `/api/chat` importiert. Er ist versioniert (Git) und damit vollständig nachvollziehbar.
+Der Systemprompt liegt in `lib/system-prompt.ts` und wird als Konstante in beide API-Routen importiert:
+- `/api/chat` — für Text-Sessions (Claude claude-opus-4-5)
+- `/api/voice/session` — für Voice-Sessions (gpt-realtime-2)
+
+Er ist versioniert (Git) und damit vollständig nachvollziehbar.
 
 ---
 

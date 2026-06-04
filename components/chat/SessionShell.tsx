@@ -44,7 +44,10 @@ export function SessionShell({ sessionId, initialMessages }: SessionShellProps) 
     return (
       <VoiceSession
         sessionId={sessionId}
-        onEnd={() => setMode('text')}
+        onEnd={() => {
+          // Seite neu laden damit Transkripte aus der DB erscheinen
+          window.location.reload()
+        }}
       />
     )
   }
