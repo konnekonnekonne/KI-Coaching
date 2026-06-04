@@ -45,3 +45,24 @@ Die Dokumentation wächst iterativ mit der Plattform und spiegelt den tatsächli
 ## Bauweise
 
 Die Plattform wurde in direkter Zusammenarbeit zwischen der Autorin und Claude (Anthropic) entwickelt. Alle Architekturentscheidungen wurden gemeinsam besprochen und dokumentiert. Der Quellcode ist im Repository öffentlich einsehbar und spiegelt die in dieser Dokumentation beschriebenen Prinzipien direkt wider.
+
+---
+
+## Dokumentationsstandard
+
+Jede relevante technische Entscheidung wird unmittelbar nach ihrer Umsetzung dokumentiert. Dieser Standard gilt verbindlich für die gesamte Entwicklung.
+
+**Was dokumentiert wird:**
+- Architekturentscheidungen und ihre Begründung
+- Was geprüft und verworfen wurde — und warum
+- Technische Grenzen und benannte Lücken
+- Abweichungen zwischen Forschungsimplementierung und kommerziellem Standard
+
+**Wie dokumentiert wird:**
+- In vollständigen deutschen Sätzen, nicht in Stichpunkten oder Code-Kommentaren
+- Auf einem Niveau, das ohne Programmierkenntnisse lesbar ist
+- Mit explizitem Bezug auf die Kapitel der Abschlussarbeit, wenn ein Zusammenhang besteht
+- Einschließlich Datum und Kontextstand (z. B. „Stand Juni 2026")
+
+**Wozu:**
+Die Dokumentation ist nicht Begleitmaterial zur Plattform — sie ist primäre Grundlage für den technischen Anhang der Abschlussarbeit. Code und Dokumentation entstehen gleichzeitig, nicht nacheinander.
