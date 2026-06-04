@@ -19,8 +19,8 @@ Die Dokumentation wächst iterativ mit der Plattform und spiegelt den tatsächli
 | [01_architektur.md](01_architektur.md) | Systemarchitektur, Tech-Stack, Begründung der Technologieauswahl |
 | [02_datenbankschema.md](02_datenbankschema.md) | Supabase-Schema, Tabellen, Row Level Security |
 | [03_systemprompt.md](03_systemprompt.md) | Aufbau und Begründung des KICO-Systemprompts |
-| [04_authentifizierung.md](04_authentifizierung.md) | Auth-Flow, Session-Management, Sicherheit |
-| [05_coaching_session.md](05_coaching_session.md) | Sessionstruktur, Streaming-Architektur, U-Modell-Mapping |
+| [04_design-system.md](04_design-system.md) | Design-Tokens, Typografie, Komponenten-API |
+| [05_voice-architektur.md](05_voice-architektur.md) | Voice-Implementierung: WebRTC, Realtime API, Entscheidungslog |
 | [06_deployment.md](06_deployment.md) | Netlify-Deployment, Umgebungsvariablen, CI/CD |
 
 ---
@@ -33,9 +33,12 @@ Die Dokumentation wächst iterativ mit der Plattform und spiegelt den tatsächli
 | Domain | kico.pro |
 | Repository | github.com/konnekonnekonne/KI-Coaching |
 | Methodische Grundlage | INA CCW-Curriculum (ECA-zertifiziert) |
-| KI-Modell | Anthropic Claude (claude-opus-4-5) |
-| Zielgruppe | Einzelpersonen im beruflichen Kontext |
+| KI-Modell Text | Anthropic Claude (claude-opus-4-5) |
+| KI-Modell Voice | OpenAI gpt-realtime-2 |
+| Voice-Architektur | WebRTC mit Ephemeral Key (GA, seit Mai 2026) |
+| Zielgruppe | Einzelpersonen im beruflichen Kontext (Forschungsrahmen) |
 | Sprache der Plattform | Deutsch |
+| Dokumentationsstand | Juni 2026 |
 
 ---
 

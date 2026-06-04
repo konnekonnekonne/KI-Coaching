@@ -15,8 +15,10 @@ KICO ist eine webbasierte Einzel-Coaching-Plattform, die einen sprachbasierten K
 | Frontend | Next.js 16 (App Router), TypeScript | Server Components ermöglichen auth-gesichertes Rendering ohne Client-Roundtrip |
 | Styling | Tailwind CSS v4 | Utility-first, kein zusätzliches CSS-Build-Tool |
 | Backend / Auth / DB | Supabase | Managed PostgreSQL + Row Level Security + Auth in einem Dienst |
-| KI-Modell | Anthropic Claude (claude-opus-4-5) | Stärkstes verfügbares Modell für nuancierte Gesprächsführung |
-| Streaming | Server-Sent Events (SSE) | Antworten erscheinen Wort für Wort — kein Warten auf vollständige Antwort |
+| KI-Modell Text | Anthropic Claude (claude-opus-4-5) | Stärkstes verfügbares Modell für nuancierte Gesprächsführung |
+| KI-Modell Voice | OpenAI gpt-realtime-2 | Einzige GA-Lösung mit Semantic VAD und nativer End-to-End-Audio-Verarbeitung |
+| Voice-Transport | WebRTC (Ephemeral Key) | Niedrigste Latenz; API-Key bleibt serverseitig |
+| Streaming (Text) | Server-Sent Events (SSE) | Antworten erscheinen Wort für Wort — kein Warten auf vollständige Antwort |
 | Deployment | Netlify (+ @netlify/plugin-nextjs) | Automatisches Deployment bei jedem Git-Push |
 | Domain | kico.pro | — |
 
@@ -42,15 +44,24 @@ Nutzer (Browser)
 │  └────────────────┘  │
 │                      │
 │  ┌────────────────┐  │
-│  │  /api/chat     │  │  ← API Route: sendet an Claude, streamt zurück
+│  │  /api/chat     │  │  ← Text-Modus: sendet an Claude, streamt zurück (SSE)
+│  └────────────────┘  │
+│                      │
+│  ┌────────────────┐  │
+│  │/api/voice/     │  │  ← Voice-Modus: generiert Ephemeral Key für WebRTC
+│  │session         │  │
 │  └────────────────┘  │
 └──────┬───────────────┘
        │
        ├── Supabase (PostgreSQL + Auth)
        │   profiles / sessions / messages
        │
-       └── Anthropic API
-           System-Prompt + Gesprächsverlauf → Claude → SSE-Stream
+       ├── Anthropic API (Text-Modus)
+       │   System-Prompt + Gesprächsverlauf → Claude → SSE-Stream
+       │
+       └── OpenAI Realtime API (Voice-Modus)
+           WebRTC direkt Browser ↔ OpenAI (gpt-realtime-2)
+           Ephemeral Key: serverseitig generiert, clientseitig eingesetzt
 ```
 
 ---
@@ -83,13 +94,16 @@ Der Anthropic API-Key verlässt den Server nie. Alle Claude-Anfragen laufen übe
 │   ├── (dashboard)/
 │   │   └── session/page.tsx        # Coaching-Session
 │   └── api/
-│       ├── chat/route.ts           # Claude-Streaming-Endpunkt
+│       ├── chat/route.ts           # Claude-Streaming-Endpunkt (Text)
+│       ├── voice/session/route.ts  # Ephemeral Key für WebRTC (Voice)
 │       └── auth/callback/route.ts  # Supabase OAuth-Callback
 ├── components/
 │   └── chat/
-│       ├── ChatWindow.tsx          # Hauptkomponente: State, Streaming-Logik
+│       ├── SessionShell.tsx        # Moduswahl (Text / Voice) + Wrapper
+│       ├── ChatWindow.tsx          # Text-Modus: State, Streaming-Logik
 │       ├── MessageBubble.tsx       # Einzelne Nachricht (User / KICO)
-│       └── InputBar.tsx            # Texteingabe mit Auto-Resize
+│       ├── InputBar.tsx            # Texteingabe mit Auto-Resize
+│       └── VoiceSession.tsx        # Voice-Modus: WebRTC, Orb-UI, Transkript
 ├── lib/
 │   ├── supabase/
 │   │   ├── client.ts               # Browser-Client

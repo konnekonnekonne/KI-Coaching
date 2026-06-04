@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { ChatWindow } from '@/components/chat/ChatWindow'
+import { SessionShell } from '@/components/chat/SessionShell'
 import { Logo } from '@/components/ui'
 import { LogOut } from 'lucide-react'
 
@@ -64,9 +64,9 @@ export default async function SessionPage() {
         </div>
       </header>
 
-      {/* ── Chat ── */}
+      {/* ── Session Shell (Text oder Voice) ── */}
       <div className="flex-1 overflow-hidden max-w-3xl w-full mx-auto">
-        <ChatWindow
+        <SessionShell
           sessionId={session?.id ?? ''}
           initialMessages={
             messages?.map((m) => ({
