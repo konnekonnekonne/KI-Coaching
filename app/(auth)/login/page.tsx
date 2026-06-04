@@ -73,7 +73,7 @@ export default function LoginPage() {
 
             <h1 className="heading-3 mb-2 text-center">Code eingeben</h1>
             <p className="body-text text-muted mb-6 text-center">
-              Wir haben einen 6-stelligen Code an <strong>{email}</strong> geschickt.
+              Wir haben einen Code an <strong>{email}</strong> geschickt.
             </p>
 
             <form onSubmit={handleCodeSubmit} className="flex flex-col gap-4">
@@ -82,10 +82,10 @@ export default function LoginPage() {
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                maxLength={6}
+                maxLength={8}
                 required
                 autoFocus
-                placeholder="123456"
+                placeholder="12345678"
                 value={code}
                 onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
                 error={state === 'error' ? (errorMsg ?? undefined) : undefined}
