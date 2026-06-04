@@ -25,7 +25,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="de" className={`${fraunces.variable} ${inter.variable} h-full`}>
+    <html lang="de" className={`${fraunces.variable} ${inter.variable} h-full`} suppressHydrationWarning>
+      <head>
+        {/* Theme vor erstem Paint setzen — verhindert Flash */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          try {
+            var t = localStorage.getItem('kico-theme');
+            if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+              document.documentElement.classList.add('dark');
+            }
+          } catch(e) {}
+        `}} />
+      </head>
       <body className="min-h-full flex flex-col antialiased">{children}</body>
     </html>
   )

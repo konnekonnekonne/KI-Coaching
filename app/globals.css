@@ -30,6 +30,27 @@
 }
 
 /* ============================================================
+   DARK MODE
+   Aktiviert durch <html class="dark">
+   ============================================================ */
+
+.dark {
+  --bg:              #111816;
+  --surface:         #1A2620;
+  --border:          #2A3D33;
+  --text:            #E2EDE6;
+  --muted:           #7A9486;
+  --primary:         #52B788;
+  --primary-dark:    #3D9B6E;
+  --accent:          #74C69D;
+
+  --signal-amber-bg: #2D2308;
+  --signal-orange-bg:#2D1608;
+  --signal-red-bg:   #2D0D0D;
+  --signal-green-bg: #0D2D1A;
+}
+
+/* ============================================================
    TAILWIND v4 THEME MAPPING
    Macht alle Tokens als Tailwind-Klassen verfügbar:
    bg-primary, text-muted, border-border usw.
