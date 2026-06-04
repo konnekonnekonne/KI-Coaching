@@ -70,6 +70,34 @@ Wenn der Coachee ausweicht, rationalisiert oder das Gespräch auf eine Meta-Eben
 
 ---
 
+### B-05b — Serverseitiger Code-Filter vor dem LLM-Call (MIND-SAFE Hardening)
+**Priorität:** Hoch
+**Status:** Offen
+
+Aktuell ist MIND-SAFE ausschließlich eine Instruktion im Systemprompt — keine technische Sperre. Das Modell befolgt die Instruktion mit hoher, aber nicht absoluter Verlässlichkeit. Für einen Coaching-Kontext mit potentiell vulnerablen Personen ist das ein architektonisches Risiko.
+
+Ergänzung: Vor jedem LLM-Call prüft ein deterministischer Code-Filter (kein Modell, kein Ermessensspielraum) die User-Nachricht auf explizite Krisenbegriffe (Wortliste). Bei Treffer wird der LLM-Call nicht ausgeführt — stattdessen wird die Krisenressource direkt vom Server zurückgegeben.
+
+Das löst nicht das Problem subtiler Krisensignale, setzt aber eine harte Untergrenze: bestimmte Muster lösen den Sicherheitsprotokoll immer aus, unabhängig vom Modellverhalten.
+
+**Aufwand:** Mittel — Wortliste definieren, Pre-Check in `/api/chat/route.ts` einbauen, Response-Logik ergänzen.
+
+---
+
+### B-05c — Server-seitiger Session-State (Phasentracking)
+**Priorität:** Mittel
+**Status:** Offen
+
+Aktuell schätzt das Modell selbst, in welcher Phase des U-Modells sich das Gespräch befindet — aus dem Gesprächsverlauf. Das ist unzuverlässig. Bei langen oder unstrukturierten Gesprächen verliert das Modell die Phasenorientierung.
+
+Ergänzung: Der Server verfolgt die aktuelle Phase als expliziten State (`sessions.current_phase`). Bei jedem API-Call wird die aktuelle Phase in den Systemprompt injiziert: „Du befindest dich in Phase 2 — Vertiefung." Das Modell rät nicht mehr — es weiß.
+
+Längerfristig ermöglicht das: Phasenübergänge erfordern explizite Bestätigung, Mindestanforderungen pro Phase werden serverseitig erzwungen.
+
+**Aufwand:** Mittel — neues DB-Feld, State-Update-Logik, Injection in API-Route.
+
+---
+
 ## Plattform / Features
 
 ### B-06 — Leere Sessions in der Sessionliste
@@ -112,6 +140,28 @@ Ein nicht-sprachliches Präsenzsignal bei längerem Schweigen (z.B. sanftes Ton-
 
 ---
 
+### B-12 — Memory-Architektur: Ebenen 3 und 4 implementieren
+**Priorität:** Hoch
+**Status:** Konzipiert, nicht gebaut (siehe `docs/07_informationsarchitektur.md`)
+
+Ebene 3 (Feldnotiz-Generierung am Session-Ende) und Ebene 4 (Memory-Injektion zu Beginn einer neuen Session) sind architektonisch beschrieben aber nicht implementiert. Benötigt:
+- Neues DB-Feld `sessions.field_note text`
+- Neues DB-Feld `profiles.coaching_notes text`
+- Summarization-Endpunkt oder automatischer Trigger
+- Injection-Logik in `/api/chat/route.ts`
+
+Abhängigkeit: B-07 (Abschluss-Button) als natürlicher Trigger für Feldnotiz-Generierung.
+
+---
+
+### B-13 — Feldnotiz-Meta-Prompt entwickeln
+**Priorität:** Hoch
+**Status:** Offen — hängt von B-12 ab
+
+Der Prompt, der aus einem Rohtranskript eine Feldnotiz generiert, ist eine eigenständige Entwicklungsaufgabe. Anderer Zweck als der Coaching-Prompt: kein Dialog, sondern strukturierte Beobachtung. Kernprinzip: keine Auflösung von Widersprüchen, keine Interpretation — nur was noch trägt. Abschnitte: Was mitgebracht wurde / Was sichtbar wurde / Was sich verändert hat / Was offen bleibt / Leitfrage / Methode / Vereinbarung.
+
+---
+
 ## Forschung / Dokumentation
 
 ### B-11 — Datenschutz-Gap Voice (DSGVO)
@@ -119,6 +169,18 @@ Ein nicht-sprachliches Präsenzsignal bei längerem Schweigen (z.B. sanftes Ton-
 **Status:** Dokumentiert in `docs/05_voice-architektur.md`
 
 Audio-Daten laufen über OpenAI-Infrastruktur ohne garantierte EU-Datenspeicherung. Im Forschungskontext mit informierter Einwilligung akzeptabel. Für eine kommerzielle Weiterentwicklung zwingend zu lösen: OpenAI Enterprise oder Wechsel zu Gemini Live (Vertex AI).
+
+---
+
+### B-14 — Abschlussarbeit: Kapitelstruktur klären
+**Priorität:** Mittel
+**Status:** Offen
+
+Drei offene Punkte zur Struktur der Abschlussarbeit:
+
+1. **„x"-Kapitel-Entscheidung:** Das Kapitel „Technische Umsetzung der Plattform" (aktuell mit Platzhalter „x" nummeriert) ist als Legacy markiert. Entscheiden: entfernen, in Kapitel 3 integrieren oder als eigenständiges Kapitel weiterführen.
+2. **Fußnotenformat:** Der Abschnitt „Von der Instruktion zur Architektur" in Kapitel 3 verwendet `¹` (Hochzahl), während das restliche Kapitel `[1]`, `[2]` etc. verwendet. Der Querverweis auf die RLHF-Problematik sollte als `[3]` inline gesetzt werden (entspricht der arXiv-Quelle aus Kapitel 2).
+3. **Folgekapitel:** Nach Kapitel 3 fehlen noch Evaluation/Diskussion und Fazit. Strukturplanung steht aus.
 
 ---
 
