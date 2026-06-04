@@ -159,11 +159,26 @@ Laufende Sessions mit vorhandenen Nachrichten starten direkt im Text-Modus. Ein 
 
 ---
 
+## Forschungsrahmen und Datenschutz: Bewusste Abweichung vom kommerziellen Standard
+
+Kapitel 3 der Abschlussarbeit analysiert die datenschutzrechtlichen Anforderungen an eine KI-Coaching-Plattform im europäischen Rechtsraum ausführlich. Die dort formulierten Anforderungen — EU-Datenspeicherung, Zero-Data-Retention-Vereinbarung mit OpenAI, oder Wechsel zu Gemini Live über Vertex AI als EU-native Alternative — sind für eine kommerzielle Plattform verbindlich.
+
+Die vorliegende Implementierung weicht von diesen Anforderungen in einem Punkt bewusst ab: **Audio-Daten werden über OpenAI-Infrastruktur verarbeitet, die standardmäßig keine EU-Datenspeicherung garantiert.** Sprachaufnahmen sind nach DSGVO Artikel 9 biometrische Personaldaten. Eine kommerzielle Plattform dürfte sie ohne EU-Rechenzentrum oder Enterprise-Vertrag nicht so verarbeiten.
+
+Diese Entscheidung ist im Forschungskontext vertretbar, weil:
+
+1. **Erlaubnistatbestand:** Die DSGVO erlaubt die Verarbeitung biometrischer Daten mit ausdrücklicher informierter Einwilligung (Art. 9 Abs. 2 lit. a). Im Forschungsrahmen wird diese Einwilligung von allen Teilnehmenden eingeholt, einschließlich des Hinweises auf US-seitige Verarbeitung.
+2. **Geschlossener Rahmen:** Die Plattform ist nicht öffentlich zugänglich. Zugang erfolgt nur über explizite Einladung im Rahmen der Forschungsarbeit.
+3. **Keine kommerzielle Nutzung:** Es findet keine Monetarisierung, kein Marketing und keine Weitergabe an Dritte statt.
+4. **Dokumentiertes Gap:** Die datenschutzrechtliche Lücke ist nicht übergangen, sondern in Kapitel 3 der Abschlussarbeit und in dieser Dokumentation explizit benannt. Sie ist Teil des Forschungsbefundes: Eine DSGVO-konforme Voice-Architektur mit Semantic VAD existiert zum Stand Juni 2026 nicht ohne erhebliche kommerzielle Vorabinvestitionen.
+
+**Für eine Weiterentwicklung zur kommerziellen Plattform** wären folgende Schritte erforderlich:
+- OpenAI Enterprise-Vertrag mit Zero-Data-Retention und EU-Rechenzentrum, oder
+- Wechsel zu Gemini Live über Vertex AI (EU-Datenspeicherung standardmäßig), sobald eine dokumentierte Semantic VAD-Lösung verfügbar ist
+
 ## Account-Anforderungen
 
 Die OpenAI Realtime API erfordert **Usage Tier 2** (mind. $50 Gesamtausgaben seit Account-Erstellung). Tier 1 hat keinen Zugang zum `/v1/realtime/client_secrets` Endpoint.
-
-Für den Forschungskontext dieser Arbeit wurde explizit auf den Datenschutzrahmen hingewiesen: Audio-Transkripte sind biometrische Personaldaten (DSGVO Art. 9). Im Forschungsrahmen deckt die informierte Einwilligung der Teilnehmenden die Verarbeitungsgrundlage ab. Für eine kommerzielle Deployment wäre eine EU-Datenspeicherlösung oder eine OpenAI-Enterprise-Zero-Data-Retention-Vereinbarung erforderlich.
 
 ---
 
