@@ -10,11 +10,13 @@ type State = 'idle' | 'loading' | 'sent' | 'error'
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [state, setState] = useState<State>('idle')
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const supabase = createClient()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setState('loading')
+    setErrorMsg(null)
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -23,7 +25,13 @@ export default function LoginPage() {
       },
     })
 
-    setState(error ? 'error' : 'sent')
+    if (error) {
+      console.error('OTP error:', error)
+      setErrorMsg(error.message)
+      setState('error')
+    } else {
+      setState('sent')
+    }
   }
 
   if (state === 'sent') {
@@ -78,7 +86,7 @@ export default function LoginPage() {
               placeholder="du@beispiel.de"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              error={state === 'error' ? 'Etwas ist schiefgelaufen. Bitte versuche es erneut.' : undefined}
+              error={state === 'error' ? (errorMsg ?? 'Unbekannter Fehler') : undefined}
             />
             <Button type="submit" loading={state === 'loading'} className="mt-2 w-full">
               Anmeldelink senden

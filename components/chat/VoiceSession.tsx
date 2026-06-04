@@ -20,7 +20,7 @@ export function VoiceSession({ sessionId, onEnd }: VoiceSessionProps) {
   const [transcript, setTranscript] = useState<string>('')
 
   const pcRef = useRef<RTCPeerConnection | null>(null)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const audioRef = useRef<HTMLAudioElement>(null)
   const localStreamRef = useRef<MediaStream | null>(null)
   const dataChannelRef = useRef<RTCDataChannel | null>(null)
 
@@ -33,23 +33,35 @@ export function VoiceSession({ sessionId, onEnd }: VoiceSessionProps) {
     try {
       // 1. Ephemeral key vom Server holen
       const tokenRes = await fetch('/api/voice/session', { method: 'POST' })
-      if (!tokenRes.ok) throw new Error('Token fetch failed')
+      if (!tokenRes.ok) {
+        const errText = await tokenRes.text()
+        console.error('Token fetch failed:', tokenRes.status, errText)
+        throw new Error(`Token fetch failed: ${tokenRes.status} ${errText}`)
+      }
       const { ephemeral_key } = await tokenRes.json()
 
-      // 2. Mikrofon anfordern
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      // 2. Mikrofon anfordern — echoCancellation verhindert Rückkoppelung
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      })
       localStreamRef.current = stream
 
       // 3. WebRTC PeerConnection aufbauen
       const pc = new RTCPeerConnection()
       pcRef.current = pc
 
-      // Audio-Output (KICO spricht)
-      const audio = new Audio()
-      audio.autoplay = true
-      audioRef.current = audio
+      // Audio-Output — nur beim ersten Track setzen, nicht bei jedem Event
+      let audioSet = false
       pc.ontrack = (e) => {
-        audio.srcObject = e.streams[0]
+        if (!audioSet && audioRef.current) {
+          audioRef.current.srcObject = e.streams[0]
+          audioRef.current.play().catch(console.error)
+          audioSet = true
+        }
         setSpeakerState('kico')
       }
 
@@ -60,6 +72,36 @@ export function VoiceSession({ sessionId, onEnd }: VoiceSessionProps) {
       const dc = pc.createDataChannel('oai-events')
       dataChannelRef.current = dc
       dc.onmessage = handleDataChannelMessage
+
+      // Nach Verbindungsaufbau: VAD konfigurieren + KICO Begrüßung triggern
+      dc.onopen = () => {
+        // Semantic VAD konfigurieren
+        dc.send(JSON.stringify({
+          type: 'session.update',
+          session: {
+            turn_detection: {
+              type: 'semantic_vad',
+              silence_duration_ms: 1200,
+              threshold: 0.5,
+            },
+            input_audio_transcription: {
+              model: 'whisper-1',
+              language: 'de',
+            },
+          },
+        }))
+
+        // KICO spricht zuerst — Begrüßung triggern
+        dc.send(JSON.stringify({
+          type: 'conversation.item.create',
+          item: {
+            type: 'message',
+            role: 'user',
+            content: [{ type: 'input_text', text: 'Bitte eröffne das Gespräch.' }],
+          },
+        }))
+        dc.send(JSON.stringify({ type: 'response.create' }))
+      }
 
       // 4. SDP Offer erstellen
       const offer = await pc.createOffer()
@@ -167,6 +209,8 @@ export function VoiceSession({ sessionId, onEnd }: VoiceSessionProps) {
 
   return (
     <div className="flex flex-col items-center justify-center h-full gap-10 px-6">
+      {/* Verstecktes Audio-Element — nötig für Browser-Autoplay */}
+      <audio ref={audioRef} autoPlay playsInline className="hidden" />
 
       {/* Status-Visualisierung */}
       <div className="flex flex-col items-center gap-4">

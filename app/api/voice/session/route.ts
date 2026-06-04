@@ -12,6 +12,9 @@ export async function POST() {
       return new Response('Unauthorized', { status: 401 })
     }
 
+    // GA API (seit Mai 2026): turn_detection und input_audio_transcription
+    // werden nicht mehr in client_secrets gesetzt, sondern nach Verbindungsaufbau
+    // per DataChannel-Event (session.update) konfiguriert.
     const response = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
       method: 'POST',
       headers: {
@@ -21,7 +24,7 @@ export async function POST() {
       body: JSON.stringify({
         expires_after: {
           anchor: 'created_at',
-          seconds: 3600, // 1h — ausreichend für eine Coaching-Session
+          seconds: 3600,
         },
         session: {
           type: 'realtime',
@@ -31,15 +34,6 @@ export async function POST() {
             output: {
               voice: 'alloy',
             },
-          },
-          turn_detection: {
-            type: 'semantic_vad',
-            silence_duration_ms: 1200, // Denkpausen tolerieren
-            threshold: 0.5,
-          },
-          input_audio_transcription: {
-            model: 'gpt-4o-mini-transcribe',
-            language: 'de',
           },
         },
       }),
