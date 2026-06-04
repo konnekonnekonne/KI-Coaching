@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { Logo, ThemeToggle } from '@/components/ui'
+import { Logo } from '@/components/ui'
 import { Dashboard } from '@/components/dashboard/Dashboard'
 
 export default async function SessionPage() {
@@ -52,17 +52,14 @@ export default async function SessionPage() {
       <header className="flex-shrink-0 bg-surface border-b border-border">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
           <Logo size={24} />
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <form>
-              <button
-                formAction={signOut}
-                className="caption text-muted hover:text-kico-text transition-colors px-2 py-1"
-              >
-                Abmelden
-              </button>
-            </form>
-          </div>
+          <form>
+            <button
+              formAction={signOut}
+              className="caption text-muted hover:text-kico-text transition-colors px-2 py-1"
+            >
+              Abmelden
+            </button>
+          </form>
         </div>
       </header>
 

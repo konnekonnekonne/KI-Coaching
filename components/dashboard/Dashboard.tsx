@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, MessageSquare, Mic, ChevronRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { Button, Input } from '@/components/ui'
+import { Button, Input, ThemeToggle } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
 interface Session {
@@ -135,6 +135,10 @@ function DashboardContent({ firstName, sessions, userId }: { firstName: string; 
       </div>
 
       {/* ── Neue Session starten ── */}
+      <div>
+      <div className="flex justify-end mb-2">
+        <ThemeToggle />
+      </div>
       <div className="bg-surface border border-border rounded-2xl p-6">
         <h2 className="heading-3 mb-1">Neue Session</h2>
         <p className="caption mb-5">Wähle, wie du heute arbeiten möchtest.</p>
@@ -169,6 +173,7 @@ function DashboardContent({ firstName, sessions, userId }: { firstName: string; 
             {isPending ? 'Startet…' : 'Session starten'}
           </button>
         </div>
+      </div>
       </div>
 
       {/* ── Vergangene Sessions ── */}
