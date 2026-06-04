@@ -10,6 +10,7 @@
   --bg:              #F5F7F5;
   --primary:         #2D6A4F;
   --primary-dark:    #235540;
+  --on-primary:      #FFFFFF;   /* Text auf Primary-Hintergrund */
   --accent:          #52B788;
   --text:            #1B2E25;
   --muted:           #64748B;
@@ -42,6 +43,7 @@
   --muted:           #7A9486;
   --primary:         #52B788;
   --primary-dark:    #3D9B6E;
+  --on-primary:      #111816;   /* Dunkel auf hellem Primary im Dark Mode */
   --accent:          #74C69D;
 
   --signal-amber-bg: #2D2308;

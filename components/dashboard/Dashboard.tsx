@@ -133,14 +133,21 @@ function DashboardContent({ firstName, sessions, userId }: { firstName: string; 
           />
         </div>
 
-        <Button
-          onClick={startNewSession}
-          loading={isPending}
-          className="w-full sm:w-auto flex items-center gap-2"
-        >
-          <Plus size={16} />
-          Session starten
-        </Button>
+        <div className="flex justify-end">
+          <button
+            onClick={startNewSession}
+            disabled={isPending}
+            className={cn(
+              'flex items-center gap-2 px-5 py-2.5 rounded-xl caption font-medium transition-all',
+              'bg-accent/15 text-accent border border-accent/30',
+              'hover:bg-accent/25 hover:border-accent/50',
+              'disabled:opacity-50 disabled:cursor-not-allowed'
+            )}
+          >
+            <Plus size={14} />
+            {isPending ? 'Startet…' : 'Session starten'}
+          </button>
+        </div>
       </div>
 
       {/* ── Vergangene Sessions ── */}
@@ -217,9 +224,10 @@ function ModeButton({ icon, label, active, onClick }: {
       className={cn(
         'flex items-center gap-2 px-4 py-2 rounded-lg border caption font-medium transition-all',
         active
-          ? 'bg-primary text-white border-primary'
+          ? 'bg-primary border-primary'
           : 'bg-bg border-border text-muted hover:border-primary/40 hover:text-kico-text'
       )}
+      style={active ? { color: 'var(--on-primary)' } : undefined}
     >
       {icon}
       {label}
