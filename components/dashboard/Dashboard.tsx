@@ -135,15 +135,10 @@ function DashboardContent({
   }
 
   return (
-    <div className="max-w-lg mx-auto px-6">
+    <div className="max-w-3xl mx-auto px-6">
 
       {/* ── Begrüßung ────────────────────────────────────────────── */}
-      <div className="min-h-[65vh] flex flex-col justify-center pt-20 pb-10 relative">
-
-        {/* ThemeToggle oben rechts im Begrüßungsbereich */}
-        <div className="absolute top-5 right-0">
-          <ThemeToggle />
-        </div>
+      <div className="min-h-[65vh] flex flex-col justify-center pt-20 pb-10">
 
         {/* Kleines Logo-Icon, sehr dezent */}
         <div className="mb-14 opacity-25">
@@ -167,10 +162,10 @@ function DashboardContent({
             type="button"
             onClick={() => setMode('text')}
             className={cn(
-              'caption transition-colors',
+              'caption transition-colors cursor-pointer',
               mode === 'text'
-                ? 'text-kico-text font-semibold'
-                : 'text-muted hover:text-kico-text'
+                ? 'text-kico-text font-semibold underline underline-offset-4 decoration-kico-text/30'
+                : 'text-muted hover:text-kico-text hover:underline hover:underline-offset-4 hover:decoration-muted/40'
             )}
           >
             Schreiben
@@ -180,10 +175,10 @@ function DashboardContent({
             type="button"
             onClick={() => setMode('voice')}
             className={cn(
-              'caption transition-colors',
+              'caption transition-colors cursor-pointer',
               mode === 'voice'
-                ? 'text-kico-text font-semibold'
-                : 'text-muted hover:text-kico-text'
+                ? 'text-kico-text font-semibold underline underline-offset-4 decoration-kico-text/30'
+                : 'text-muted hover:text-kico-text hover:underline hover:underline-offset-4 hover:decoration-muted/40'
             )}
           >
             Sprechen
@@ -195,11 +190,11 @@ function DashboardContent({
           onClick={startNewSession}
           disabled={isPending}
           className={cn(
-            'display text-left transition-colors leading-tight',
+            'display text-left transition-colors leading-tight cursor-pointer',
             'text-primary hover:text-primary-dark',
             'disabled:opacity-40 disabled:cursor-not-allowed'
           )}
-          style={{ fontSize: 'clamp(1.75rem, 6vw, 2.75rem)' }}
+          style={{ fontSize: 'clamp(1.75rem, 5vw, 3rem)' }}
         >
           {isPending ? 'Startet…' : 'Session beginnen →'}
         </button>

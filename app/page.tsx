@@ -7,7 +7,7 @@ export default function Home() {
     <div className="min-h-screen bg-bg">
 
       {/* ── Navigation — ganz dezent, kein Header-Box ── */}
-      <nav className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-6 py-5 max-w-lg mx-auto">
+      <nav className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-6 py-5 max-w-3xl mx-auto">
         <div className="opacity-30">
           <Logo size={20} showWordmark={false} />
         </div>
@@ -19,7 +19,7 @@ export default function Home() {
         </Link>
       </nav>
 
-      <main className="max-w-lg mx-auto px-6">
+      <main className="max-w-3xl mx-auto px-6">
 
         {/* ── Hero ── */}
         <section className="min-h-[70vh] flex flex-col justify-center pt-24 pb-12">
@@ -40,7 +40,7 @@ export default function Home() {
 
           <Link
             href="/login"
-            className="display text-primary hover:text-primary-dark transition-colors leading-tight"
+            className="display text-primary hover:text-primary-dark transition-colors leading-tight cursor-pointer"
             style={{ fontSize: 'clamp(1.75rem, 6vw, 2.75rem)' }}
           >
             Jetzt beginnen →
