@@ -88,14 +88,46 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
   const handleDataChannelMessage = useCallback(async (e: MessageEvent) => {
     try {
       const event = JSON.parse(e.data)
-      console.log('[Voice DC]', event.type)
-      // Debug-Panel: letzte 8 Events sichtbar im UI
-      setDebugEvents(prev => [...prev.slice(-7), event.type])
+      console.log('[Voice DC]', event.type, event.type === 'error' ? event : '')
+      // Debug-Panel: letzte 8 Events (inkl. Fehler)
+      const label = event.type === 'error'
+        ? `ERROR: ${event.error?.message ?? JSON.stringify(event.error)}`
+        : event.type
+      setDebugEvents(prev => [...prev.slice(-7), label])
 
+      if (event.type === 'response.output_audio.delta') setIsKicoSpeaking(true)
+      if (event.type === 'response.output_audio.done')  setIsKicoSpeaking(false)
+      // Fallback für ältere Eventnamen
       if (event.type === 'response.audio.delta') setIsKicoSpeaking(true)
       if (event.type === 'response.audio.done')  setIsKicoSpeaking(false)
 
-      // User-Transkript: Delta (live) — mehrere mögliche Eventnamen je nach Modell
+      // User-Transkript: via conversation.item.done (bestätigt im Event-Log)
+      // Enthält input_audio-Content mit transcript wenn User gesprochen hat
+      if (event.type === 'conversation.item.done') {
+        const item = event.item
+        if (item?.role === 'user') {
+          const parts: { type?: string; transcript?: string }[] = item.content ?? []
+          for (const part of parts) {
+            if (part.type === 'input_audio' && part.transcript?.trim()) {
+              const text = part.transcript.trim()
+              setLiveTranscript('')
+              setHistory(h => {
+                const next = [...h, { role: 'user' as const, text }]
+                historyRef.current = next
+                return next
+              })
+              const phrase = extractKeyPhrase(text)
+              if (phrase) { setKeyPhrase(phrase); setKeyPhraseVisible(true) }
+              const { error } = await supabase.from('messages').insert({
+                session_id: sessionId, user_id: userIdRef.current, role: 'user', content: text,
+              })
+              if (error) console.error('[Voice DB] User insert error:', error.message)
+            }
+          }
+        }
+      }
+
+      // User-Transkript: Delta (live) — falls doch aktivierbar
       if (
         event.type === 'conversation.item.input_audio_transcription.delta' ||
         event.type === 'input_audio_transcription.delta'
@@ -103,7 +135,7 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
         setLiveTranscript(prev => prev + (event.delta ?? ''))
       }
 
-      // User-Transkript: Abgeschlossen
+      // User-Transkript: Abgeschlossen (separates Event wenn input_audio_transcription aktiv)
       if (
         event.type === 'conversation.item.input_audio_transcription.completed' ||
         event.type === 'input_audio_transcription.completed'
@@ -112,21 +144,40 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
         if (text.trim()) {
           setLiveTranscript('')
           setHistory(h => {
+            // Nur hinzufügen wenn nicht schon via conversation.item.done erfasst
+            const alreadyAdded = h.some(e => e.role === 'user' && e.text === text)
+            if (alreadyAdded) return h
             const next = [...h, { role: 'user' as const, text }]
             historyRef.current = next
             return next
           })
           const phrase = extractKeyPhrase(text)
           if (phrase) { setKeyPhrase(phrase); setKeyPhraseVisible(true) }
-          const { error } = await supabase.from('messages').insert({
-            session_id: sessionId, user_id: userIdRef.current, role: 'user', content: text,
-          })
-          if (error) console.error('[Voice DB] User insert error:', error.message)
         }
       }
 
-      // response.done: primäre Quelle für KICO-Transkript (gpt-realtime-2 GA)
-      // Enthält output[].content[].transcript mit dem vollständigen Text
+      // KICO-Transkript: direkt via response.output_audio_transcript.done (bestätigt)
+      if (event.type === 'response.output_audio_transcript.done') {
+        const text: string = event.transcript ?? ''
+        if (text.trim()) {
+          const responseId = event.item_id ?? event.event_id ?? ''
+          if (!responseId || !processedResponseIds.current.has(responseId)) {
+            if (responseId) processedResponseIds.current.add(responseId)
+            setHistory(h => {
+              const next = [...h, { role: 'kico' as const, text }]
+              historyRef.current = next
+              return next
+            })
+            setKeyPhraseVisible(false)
+            const { error } = await supabase.from('messages').insert({
+              session_id: sessionId, user_id: userIdRef.current, role: 'assistant', content: text,
+            })
+            if (error) console.error('[Voice DB] KICO insert error:', error.message)
+          }
+        }
+      }
+
+      // response.done: Fallback falls output_audio_transcript.done nicht feuert
       if (event.type === 'response.done') {
         const responseId: string = event.response?.id ?? event.event_id ?? ''
         if (responseId && processedResponseIds.current.has(responseId)) return
