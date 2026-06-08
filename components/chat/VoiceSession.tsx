@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 
 interface VoiceSessionProps {
   sessionId: string
+  priorMessages?: { role: 'user' | 'assistant'; content: string }[]
   onEnd: (history: TranscriptEntry[]) => void
 }
 
@@ -53,7 +54,7 @@ function extractKeyPhrase(text: string): string | null {
 
 // ── Hauptkomponente ─────────────────────────────────────────────────────────
 
-export function VoiceSession({ sessionId, onEnd }: VoiceSessionProps) {
+export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionProps) {
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle')
   const [isKicoSpeaking, setIsKicoSpeaking] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
@@ -127,15 +128,44 @@ export function VoiceSession({ sessionId, onEnd }: VoiceSessionProps) {
             input_audio_transcription: { model: 'whisper-1', language: 'de' },
           },
         }))
-        // KICO begrüßt zuerst
-        dc.send(JSON.stringify({
-          type: 'conversation.item.create',
-          item: {
-            type: 'message',
-            role: 'user',
-            content: [{ type: 'input_text', text: 'Bitte eröffne das Gespräch.' }],
-          },
-        }))
+
+        if (priorMessages && priorMessages.length > 0) {
+          // Text-Kontext injizieren — max. 20 Nachrichten um den Context nicht zu sprengen
+          const context = priorMessages.slice(-20)
+          for (const msg of context) {
+            dc.send(JSON.stringify({
+              type: 'conversation.item.create',
+              item: {
+                type: 'message',
+                role: msg.role,
+                content: [{
+                  type: msg.role === 'assistant' ? 'text' : 'input_text',
+                  text: msg.content,
+                }],
+              },
+            }))
+          }
+          // KICO nahtlos fortführen lassen
+          dc.send(JSON.stringify({
+            type: 'conversation.item.create',
+            item: {
+              type: 'message',
+              role: 'user',
+              content: [{ type: 'input_text', text: 'Wir wechseln jetzt von Schrift zu Sprache. Bitte führe das Gespräch nahtlos fort.' }],
+            },
+          }))
+        } else {
+          // Frische Session — KICO eröffnet
+          dc.send(JSON.stringify({
+            type: 'conversation.item.create',
+            item: {
+              type: 'message',
+              role: 'user',
+              content: [{ type: 'input_text', text: 'Bitte eröffne das Gespräch.' }],
+            },
+          }))
+        }
+
         dc.send(JSON.stringify({ type: 'response.create' }))
       }
 

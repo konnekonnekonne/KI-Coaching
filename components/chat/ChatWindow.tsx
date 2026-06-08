@@ -14,9 +14,10 @@ interface Message {
 interface ChatWindowProps {
   sessionId: string
   initialMessages?: Message[]
+  onMessagesChange?: (messages: Message[]) => void
 }
 
-export function ChatWindow({ sessionId, initialMessages = [] }: ChatWindowProps) {
+export function ChatWindow({ sessionId, initialMessages = [], onMessagesChange }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
@@ -27,6 +28,12 @@ export function ChatWindow({ sessionId, initialMessages = [] }: ChatWindowProps)
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, streamingContent])
+
+  // Aktuelle Message-Liste nach oben melden (für Text→Voice-Übergabe)
+  useEffect(() => {
+    onMessagesChange?.(messages)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages])
 
   // KICO-Begrüßung beim ersten Laden — nur wenn keine Nachrichten vorhanden
   useEffect(() => {
