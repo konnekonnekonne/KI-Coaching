@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Mic, MessageSquare } from 'lucide-react'
+import { Mic } from 'lucide-react'
 import { ChatWindow } from './ChatWindow'
 import { VoiceSession } from './VoiceSession'
+import { createClient } from '@/lib/supabase/client'
 
 interface Message {
   id: string
@@ -23,6 +24,7 @@ export function SessionShell({ sessionId, initialMessages }: SessionShellProps) 
   // Transkript-Übergabe zwischen Modi — kein Reload, kein DB-Roundtrip
   const [voiceHandoff, setVoiceHandoff] = useState<Message[] | null>(null)
   const [currentMessages, setCurrentMessages] = useState<Message[]>(initialMessages)
+  const supabase = createClient()
 
   function getInitialMode(): Mode {
     if (initialMessages.length > 0) return 'text'
@@ -35,14 +37,30 @@ export function SessionShell({ sessionId, initialMessages }: SessionShellProps) 
   }
   const [mode, setMode] = useState<Mode>(getInitialMode)
 
-  // Voice → Text: History direkt im Speicher übergeben
-  function handleVoiceEnd(history: { role: 'user' | 'kico'; text: string }[]) {
+  // Voice → Text: History direkt im Speicher übergeben, DB-Fallback wenn leer
+  async function handleVoiceEnd(history: { role: 'user' | 'kico'; text: string }[]) {
     try { sessionStorage.removeItem(`kico-mode-${sessionId}`) } catch { /* ignore */ }
-    const messages: Message[] = history.map((entry, i) => ({
-      id: `voice-${i}`,
-      role: entry.role === 'kico' ? 'assistant' : 'user',
-      content: entry.text,
-    }))
+    let messages: Message[]
+    if (history.length > 0) {
+      messages = history.map((entry, i) => ({
+        id: `voice-${i}`,
+        role: (entry.role === 'kico' ? 'assistant' : 'user') as 'user' | 'assistant',
+        content: entry.text,
+      }))
+    } else {
+      // In-flight DB-Inserts noch nicht committed — kurz warten, dann aus DB lesen
+      await new Promise(r => setTimeout(r, 600))
+      const { data } = await supabase
+        .from('messages')
+        .select('id, role, content, created_at')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: true })
+      messages = (data ?? []).map(m => ({
+        id: m.id,
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      }))
+    }
     setVoiceHandoff(messages)
     setCurrentMessages(messages)
     setMode('text')
@@ -99,26 +117,11 @@ export function SessionShell({ sessionId, initialMessages }: SessionShellProps) 
   if (mode === 'voice') {
     return (
       <div className="flex flex-col h-full">
-        {/* Modus-Wechsel: Voice → Text */}
-        <div className="flex-shrink-0 flex justify-end px-6 py-2 border-b border-border/40">
-          <button
-            onClick={() => {
-              try { sessionStorage.removeItem(`kico-mode-${sessionId}`) } catch { /* ignore */ }
-              setMode('text')
-            }}
-            className="flex items-center gap-1.5 caption text-muted/40 hover:text-primary transition-colors cursor-pointer"
-          >
-            <MessageSquare size={12} />
-            Weiter per Schrift
-          </button>
-        </div>
-        <div className="flex-1 overflow-hidden">
-          <VoiceSession
-            sessionId={sessionId}
-            priorMessages={currentMessages.map(m => ({ role: m.role, content: m.content }))}
-            onEnd={handleVoiceEnd}
-          />
-        </div>
+        <VoiceSession
+          sessionId={sessionId}
+          priorMessages={currentMessages.map(m => ({ role: m.role, content: m.content }))}
+          onEnd={handleVoiceEnd}
+        />
       </div>
     )
   }
