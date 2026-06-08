@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 
 interface VoiceSessionProps {
   sessionId: string
-  onEnd: () => void
+  onEnd: (history: TranscriptEntry[]) => void
 }
 
 type ConnectionState = 'idle' | 'connecting' | 'connected' | 'error'
@@ -68,6 +68,8 @@ export function VoiceSession({ sessionId, onEnd }: VoiceSessionProps) {
   const localStreamRef = useRef<MediaStream | null>(null)
   const dataChannelRef = useRef<RTCDataChannel | null>(null)
   const historyEndRef = useRef<HTMLDivElement>(null)
+  // Ref damit handleEnd nie eine veraltete history-Kopie übergibt
+  const historyRef = useRef<TranscriptEntry[]>([])
 
   const supabase = createClient()
   const userIdRef = useRef<string | null>(null)
@@ -180,7 +182,11 @@ export function VoiceSession({ sessionId, onEnd }: VoiceSessionProps) {
         const text: string = event.transcript ?? ''
         if (text.trim()) {
           setLiveTranscript('')
-          setHistory(h => [...h, { role: 'user', text }])
+          setHistory(h => {
+            const next = [...h, { role: 'user' as const, text }]
+            historyRef.current = next
+            return next
+          })
           const phrase = extractKeyPhrase(text)
           if (phrase) {
             setKeyPhrase(phrase)
@@ -197,7 +203,11 @@ export function VoiceSession({ sessionId, onEnd }: VoiceSessionProps) {
       if (event.type === 'response.audio_transcript.done') {
         const text: string = event.transcript ?? ''
         if (text.trim()) {
-          setHistory(h => [...h, { role: 'kico', text }])
+          setHistory(h => {
+            const next = [...h, { role: 'kico' as const, text }]
+            historyRef.current = next
+            return next
+          })
           setKeyPhraseVisible(false)
           const { error } = await supabase.from('messages').insert({
             session_id: sessionId, user_id: userIdRef.current, role: 'assistant', content: text,
@@ -249,6 +259,12 @@ export function VoiceSession({ sessionId, onEnd }: VoiceSessionProps) {
     setIsKicoSpeaking(false)
     setIsRecording(false)
   }, [])
+
+  const handleEnd = useCallback(() => {
+    const snapshot = historyRef.current
+    cleanup()
+    onEnd(snapshot)
+  }, [cleanup, onEnd])
 
   useEffect(() => {
     connect()
@@ -339,7 +355,7 @@ export function VoiceSession({ sessionId, onEnd }: VoiceSessionProps) {
 
         {/* Session beenden */}
         <button
-          onClick={onEnd}
+          onClick={handleEnd}
           className="flex items-center gap-2 caption text-muted/40 hover:text-signal-red transition-colors cursor-pointer"
           aria-label="Voice-Session beenden"
         >

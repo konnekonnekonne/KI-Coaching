@@ -20,6 +20,10 @@ interface SessionShellProps {
 type Mode = 'choose' | 'text' | 'voice'
 
 export function SessionShell({ sessionId, initialMessages }: SessionShellProps) {
+  // Transkript aus einer abgeschlossenen Voice-Session — direkt im Speicher,
+  // kein Reload, kein DB-Roundtrip nötig
+  const [voiceHandoff, setVoiceHandoff] = useState<Message[] | null>(null)
+
   function getInitialMode(): Mode {
     if (initialMessages.length > 0) return 'text'
     try {
@@ -31,11 +35,32 @@ export function SessionShell({ sessionId, initialMessages }: SessionShellProps) 
   }
   const [mode, setMode] = useState<Mode>(getInitialMode)
 
+  // Wird von VoiceSession aufgerufen wenn der Nutzer die Session beendet.
+  // history enthält alle abgeschlossenen Turns — direkt als initialMessages
+  // an ChatWindow übergeben, damit der Übergang nahtlos und ohne Reload ist.
+  function handleVoiceEnd(history: { role: 'user' | 'kico'; text: string }[]) {
+    try { sessionStorage.removeItem(`kico-mode-${sessionId}`) } catch { /* ignore */ }
+
+    const messages: Message[] = history.map((entry, i) => ({
+      id: `voice-${i}`,
+      role: entry.role === 'kico' ? 'assistant' : 'user',
+      content: entry.text,
+    }))
+
+    setVoiceHandoff(messages)
+    setMode('text')
+  }
+
+  // Die effektiven initialMessages für ChatWindow:
+  // - voiceHandoff wenn gerade aus Voice gewechselt
+  // - sonst die vom Server geladenen Nachrichten
+  const chatMessages = voiceHandoff ?? initialMessages
+
   // Text-Modus
   if (mode === 'text' || (initialMessages.length > 0 && mode !== 'voice')) {
     return (
       <div className="flex flex-col h-full">
-        {mode === 'text' && initialMessages.length === 0 && (
+        {mode === 'text' && chatMessages.length === 0 && (
           <div className="flex-shrink-0 flex justify-end px-6 py-3 border-b border-border">
             <button
               onClick={() => setMode('voice')}
@@ -47,7 +72,7 @@ export function SessionShell({ sessionId, initialMessages }: SessionShellProps) 
           </div>
         )}
         <div className="flex-1 overflow-hidden">
-          <ChatWindow sessionId={sessionId} initialMessages={initialMessages} />
+          <ChatWindow sessionId={sessionId} initialMessages={chatMessages} />
         </div>
       </div>
     )
@@ -58,11 +83,7 @@ export function SessionShell({ sessionId, initialMessages }: SessionShellProps) 
     return (
       <VoiceSession
         sessionId={sessionId}
-        onEnd={() => {
-          // sessionStorage löschen — verhindert, dass die Seite direkt wieder Voice startet
-          try { sessionStorage.removeItem(`kico-mode-${sessionId}`) } catch { /* ignore */ }
-          window.location.reload()
-        }}
+        onEnd={handleVoiceEnd}
       />
     )
   }
@@ -73,7 +94,6 @@ export function SessionShell({ sessionId, initialMessages }: SessionShellProps) 
       <p className="body-text text-muted mb-10">
         Wie möchtest du heute arbeiten?
       </p>
-
       <div className="flex flex-col gap-1">
         <button
           onClick={() => setMode('text')}
