@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { Check } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { Button, Input, ThemeToggle, Logo } from '@/components/ui'
+import { Button, Input, Logo } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
 interface Session {
@@ -99,6 +100,43 @@ function getGreeting(firstName: string): { heading: string; sub: string } {
   }
 }
 
+// ── Preference-Zeile ────────────────────────────────────────────────────────
+
+function PreferenceRow({
+  optionA,
+  optionB,
+  active,
+  onToggle,
+}: {
+  optionA: string
+  optionB: string
+  active: 'a' | 'b'
+  onToggle: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="group flex items-center gap-3 py-2 cursor-pointer w-full text-left"
+    >
+      <Check className="h-4 w-4 text-accent flex-shrink-0 group-hover:text-primary transition-colors duration-300" />
+      <span className={cn(
+        'caption transition-colors duration-200',
+        active === 'a' ? 'text-kico-text font-medium' : 'text-muted/45'
+      )}>
+        {optionA}
+      </span>
+      <span className="caption text-muted/25 select-none mx-0.5">·</span>
+      <span className={cn(
+        'caption transition-colors duration-200',
+        active === 'b' ? 'text-kico-text font-medium' : 'text-muted/45'
+      )}>
+        {optionB}
+      </span>
+    </button>
+  )
+}
+
 // ── Dashboard-Inhalt ────────────────────────────────────────────────────────
 
 function DashboardContent({
@@ -113,8 +151,22 @@ function DashboardContent({
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [mode, setMode] = useState<'text' | 'voice'>('text')
+  const [dark, setDark] = useState(false)
+  const [themeMounted, setThemeMounted] = useState(false)
   const supabase = createClient()
   const greeting = getGreeting(firstName)
+
+  useEffect(() => {
+    setDark(document.documentElement.classList.contains('dark'))
+    setThemeMounted(true)
+  }, [])
+
+  function toggleTheme() {
+    const next = !dark
+    setDark(next)
+    document.documentElement.classList.toggle('dark', next)
+    localStorage.setItem('kico-theme', next ? 'dark' : 'light')
+  }
 
   // Leere Sessions nicht anzeigen
   const filledSessions = sessions.filter(s => s.message_count > 0)
@@ -145,7 +197,7 @@ function DashboardContent({
           <Logo size={20} showWordmark={false} />
         </div>
 
-        <h1 className="display mb-4">
+        <h1 className="display mb-4 text-kico-text">
           {greeting.heading}
         </h1>
         <p className="body-text text-muted">
@@ -153,36 +205,28 @@ function DashboardContent({
         </p>
       </div>
 
-      {/* ── Neue Session ─────────────────────────────────────────── */}
+      {/* ── Einstellungen & neue Session ─────────────────────────── */}
       <div className="border-t border-border pt-10 pb-16">
 
-        {/* Modus-Auswahl — als Text, nicht als Buttons */}
-        <div className="flex items-center gap-4 mb-8">
-          <button
-            type="button"
-            onClick={() => setMode('text')}
-            className={cn(
-              'caption transition-colors cursor-pointer',
-              mode === 'text'
-                ? 'text-kico-text font-semibold underline underline-offset-4 decoration-kico-text/30'
-                : 'text-muted hover:text-kico-text hover:underline hover:underline-offset-4 hover:decoration-muted/40'
-            )}
-          >
-            Schreiben
-          </button>
-          <span className="text-muted/30 caption select-none">·</span>
-          <button
-            type="button"
-            onClick={() => setMode('voice')}
-            className={cn(
-              'caption transition-colors cursor-pointer',
-              mode === 'voice'
-                ? 'text-kico-text font-semibold underline underline-offset-4 decoration-kico-text/30'
-                : 'text-muted hover:text-kico-text hover:underline hover:underline-offset-4 hover:decoration-muted/40'
-            )}
-          >
-            Sprechen
-          </button>
+        {/* Einladung zur Präferenz */}
+        <p className="body-text text-muted mb-5">Mach es dir bequem.</p>
+
+        {/* Preference-Checklist */}
+        <div className="mb-10 space-y-0.5">
+          {themeMounted && (
+            <PreferenceRow
+              optionA="Hell"
+              optionB="Dunkel"
+              active={dark ? 'b' : 'a'}
+              onToggle={toggleTheme}
+            />
+          )}
+          <PreferenceRow
+            optionA="Schreiben"
+            optionB="Sprechen"
+            active={mode === 'text' ? 'a' : 'b'}
+            onToggle={() => setMode(mode === 'text' ? 'voice' : 'text')}
+          />
         </div>
 
         {/* Typografischer CTA — eine Einladung, kein Formular */}
@@ -202,7 +246,7 @@ function DashboardContent({
 
       {/* ── Vergangene Sessions ───────────────────────────────────── */}
       {filledSessions.length > 0 && (
-        <div className="pb-8">
+        <div className="pb-16">
           <p className="label-text mb-4">Frühere Sessions</p>
           <div>
             {filledSessions.map(session => (
@@ -212,16 +256,11 @@ function DashboardContent({
         </div>
       )}
 
-      {/* ── Hell/Dunkel — ganz unten, dezent ─────────────────────── */}
-      <div className="py-12">
-        <ThemeToggle />
-      </div>
-
     </div>
   )
 }
 
-// ── Session-Zeile (keine Karte mehr) ───────────────────────────────────────
+// ── Session-Zeile ──────────────────────────────────────────────────────────
 
 function SessionRow({ session }: { session: Session }) {
   const router = useRouter()
