@@ -117,21 +117,44 @@ function PreferenceRow({
     <button
       type="button"
       onClick={onToggle}
-      className="group flex items-center gap-3 py-2 cursor-pointer w-full text-left"
+      title={`Wechseln zu ${active === 'a' ? optionB : optionA}`}
+      className="group flex items-center gap-3 py-2.5 -mx-2 px-2 rounded-lg cursor-pointer w-full text-left hover:bg-primary/5 transition-colors duration-200"
     >
-      <Check className="h-4 w-4 text-accent flex-shrink-0 group-hover:text-primary transition-colors duration-300" />
-      <span className={cn(
-        'caption transition-colors duration-200',
-        active === 'a' ? 'text-kico-text font-medium' : 'text-muted/45'
-      )}>
-        {optionA}
+      {/* Option A */}
+      <span className="flex items-center gap-1.5">
+        {/* reservierter Platz für den Check */}
+        <span className="w-4 h-4 flex items-center justify-center flex-shrink-0">
+          {active === 'a' && (
+            <Check className="h-3.5 w-3.5 text-accent group-hover:text-primary transition-colors duration-300" />
+          )}
+        </span>
+        <span className={cn(
+          'caption transition-colors duration-200',
+          active === 'a'
+            ? 'text-kico-text font-medium'
+            : 'text-muted/40 group-hover:text-muted/70'
+        )}>
+          {optionA}
+        </span>
       </span>
-      <span className="caption text-muted/25 select-none mx-0.5">·</span>
-      <span className={cn(
-        'caption transition-colors duration-200',
-        active === 'b' ? 'text-kico-text font-medium' : 'text-muted/45'
-      )}>
-        {optionB}
+
+      <span className="caption text-muted/25 select-none">·</span>
+
+      {/* Option B */}
+      <span className="flex items-center gap-1.5">
+        <span className="w-4 h-4 flex items-center justify-center flex-shrink-0">
+          {active === 'b' && (
+            <Check className="h-3.5 w-3.5 text-accent group-hover:text-primary transition-colors duration-300" />
+          )}
+        </span>
+        <span className={cn(
+          'caption transition-colors duration-200',
+          active === 'b'
+            ? 'text-kico-text font-medium'
+            : 'text-muted/40 group-hover:text-muted/70'
+        )}>
+          {optionB}
+        </span>
       </span>
     </button>
   )
