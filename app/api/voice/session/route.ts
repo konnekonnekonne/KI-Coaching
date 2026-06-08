@@ -12,9 +12,8 @@ export async function POST() {
       return new Response('Unauthorized', { status: 401 })
     }
 
-    // GA API (seit Mai 2026): turn_detection und input_audio_transcription
-    // werden nicht mehr in client_secrets gesetzt, sondern nach Verbindungsaufbau
-    // per DataChannel-Event (session.update) konfiguriert.
+    // session.update via DataChannel scheitert für input_audio_transcription bei gpt-realtime-2
+    // → Konfiguration server-seitig beim Client-Secret-Request setzen
     const response = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
       method: 'POST',
       headers: {
@@ -30,9 +29,14 @@ export async function POST() {
           type: 'realtime',
           model: 'gpt-realtime-2',
           instructions: SYSTEM_PROMPT,
+          // Input-Transkription server-seitig aktivieren (client-seitiges session.update
+          // wird von gpt-realtime-2 für diese Felder nicht akzeptiert)
+          input_audio_transcription: {
+            model: 'whisper-1',
+          },
           audio: {
             output: {
-              voice: 'shimmer', // energischer als alloy, gut für Deutsch
+              voice: 'shimmer',
             },
           },
         },

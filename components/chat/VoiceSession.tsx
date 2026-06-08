@@ -49,7 +49,8 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
   const router = useRouter()
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle')
   const [isKicoSpeaking, setIsKicoSpeaking] = useState(false)
-  const [isRecording, setIsRecording] = useState(false)
+  const [isMicOpen, setIsMicOpen] = useState(false)      // Mic-Track aktiv
+  const [isRecording, setIsRecording] = useState(false)   // VAD erkennt Sprache
   const [liveTranscript, setLiveTranscript] = useState('')
   const [history, setHistory] = useState<TranscriptEntry[]>([])
   const [keyPhrase, setKeyPhrase] = useState<string | null>(null)
@@ -65,8 +66,6 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
   const historyRef = useRef<TranscriptEntry[]>([])
   // Ref-Handler: DataChannel benutzt immer die neueste Version — verhindert Stale-Closure
   const messageHandlerRef = useRef<((e: MessageEvent) => void) | null>(null)
-  // Debounce: mindestens 800ms aufnehmen bevor Senden möglich
-  const recordingStartRef = useRef<number>(0)
 
   const supabase = createClient()
   const userIdRef = useRef<string | null>(null)
@@ -103,9 +102,14 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
 
       if (event.type === 'response.output_audio.delta') setIsKicoSpeaking(true)
       if (event.type === 'response.output_audio.done')  setIsKicoSpeaking(false)
-      // Fallback für ältere Eventnamen
       if (event.type === 'response.audio.delta') setIsKicoSpeaking(true)
       if (event.type === 'response.audio.done')  setIsKicoSpeaking(false)
+      // VAD-Events: User-Spracherkennung — steuert isRecording (pulsierender Kreis)
+      if (event.type === 'input_audio_buffer.speech_started') setIsRecording(true)
+      if (event.type === 'input_audio_buffer.speech_stopped') {
+        setIsRecording(false)
+        setLiveTranscript('') // live-cursor löschen bis transcription.completed kommt
+      }
 
       // User-Transkript: via conversation.item.done (bestätigt im Event-Log)
       // Enthält input_audio-Content mit transcript wenn User gesprochen hat
@@ -231,20 +235,8 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
       dc.onmessage = (e) => messageHandlerRef.current?.(e)
 
       dc.onopen = () => {
-        // Zwei Updates: turn_detection und transcription getrennt senden
-        // (manche API-Versionen akzeptieren sie nicht gemeinsam)
-        dc.send(JSON.stringify({
-          type: 'session.update',
-          session: { turn_detection: null },
-        }))
-        dc.send(JSON.stringify({
-          type: 'session.update',
-          session: {
-            input_audio_transcription: {
-              model: 'whisper-1',  // universell unterstützt in allen Versionen
-            },
-          },
-        }))
+        // input_audio_transcription ist server-seitig gesetzt — hier nicht nötig.
+        // turn_detection: VAD läuft als Standard, wir steuern nur per Mic-Toggle.
 
         if (priorMessages && priorMessages.length > 0) {
           const context = priorMessages.slice(-20)
@@ -291,34 +283,26 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Push-to-Talk ────────────────────────────────────────────────────────
-
-  const startRecording = useCallback(() => {
-    if (connectionState !== 'connected') return
-    if (isKicoSpeaking) {
-      dataChannelRef.current?.send(JSON.stringify({ type: 'response.cancel' }))
-      setIsKicoSpeaking(false)
-    }
-    dataChannelRef.current?.send(JSON.stringify({ type: 'input_audio_buffer.clear' }))
-    localStreamRef.current?.getAudioTracks().forEach(t => { t.enabled = true })
-    setLiveTranscript('')
-    recordingStartRef.current = Date.now()
-    setIsRecording(true)
-  }, [connectionState, isKicoSpeaking])
-
-  const stopAndSend = useCallback(() => {
-    // Mindestens 800ms aufnehmen — verhindert unbeabsichtigtes Doppeltippen
-    if (Date.now() - recordingStartRef.current < 800) return
-    localStreamRef.current?.getAudioTracks().forEach(t => { t.enabled = false })
-    setIsRecording(false)
-    dataChannelRef.current?.send(JSON.stringify({ type: 'input_audio_buffer.commit' }))
-    dataChannelRef.current?.send(JSON.stringify({ type: 'response.create' }))
-  }, [])
+  // ── Mic Toggle (PTT ohne manuellen Commit) ──────────────────────────────
+  // VAD übernimmt Commit + Response-Trigger sobald Sprache endet.
+  // Wir schalten nur den Mic-Track an/aus — kein input_audio_buffer.commit nötig.
 
   const handleRecordButton = useCallback(() => {
-    if (isRecording) stopAndSend()
-    else startRecording()
-  }, [isRecording, startRecording, stopAndSend])
+    if (connectionState !== 'connected') return
+    if (!isMicOpen) {
+      // Mic öffnen — KICO ggf. unterbrechen
+      if (isKicoSpeaking) {
+        dataChannelRef.current?.send(JSON.stringify({ type: 'response.cancel' }))
+        setIsKicoSpeaking(false)
+      }
+      localStreamRef.current?.getAudioTracks().forEach(t => { t.enabled = true })
+      setIsMicOpen(true)
+    } else {
+      // Mic schließen — VAD erkennt Stille und committed automatisch
+      localStreamRef.current?.getAudioTracks().forEach(t => { t.enabled = false })
+      setIsMicOpen(false)
+    }
+  }, [connectionState, isMicOpen, isKicoSpeaking])
 
   // ── Cleanup & Ende ──────────────────────────────────────────────────────
 
@@ -329,6 +313,7 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
     localStreamRef.current = null
     dataChannelRef.current = null
     setIsKicoSpeaking(false)
+    setIsMicOpen(false)
     setIsRecording(false)
   }, [])
 
@@ -353,8 +338,9 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
   const statusText =
     connectionState === 'connecting' ? 'Verbinde…' :
     connectionState === 'error'      ? 'Verbindungsfehler — bitte neu laden' :
-    isRecording                      ? 'Nochmal tippen zum Senden' :
     isKicoSpeaking                   ? 'Tippen zum Unterbrechen' :
+    isRecording                      ? 'Spreche…' :
+    isMicOpen                        ? 'Mic offen — sprich jetzt' :
                                        'Tippen zum Sprechen'
 
   const canRecord = connectionState === 'connected'
@@ -373,25 +359,29 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
           <button
             onClick={handleRecordButton}
             disabled={!canRecord}
-            aria-label={isRecording ? 'Aufnahme senden' : 'Aufnahme starten'}
+            aria-label={isMicOpen ? 'Mic schließen' : 'Mic öffnen'}
             className={cn(
               'relative w-32 h-32 rounded-full flex items-center justify-center',
               'transition-all duration-300 cursor-pointer',
               'disabled:opacity-30 disabled:cursor-not-allowed',
-              !isRecording && canRecord && [
+              !isMicOpen && canRecord && [
                 'border-2 border-primary/30 bg-primary/5',
                 'hover:border-primary hover:bg-primary/10 hover:scale-105',
                 'active:scale-95',
               ],
+              isMicOpen && !isRecording && 'border-2 border-primary/60 bg-primary/10 scale-105',
               isRecording && 'border-2 border-signal-red bg-signal-red/10 scale-105',
-              (!canRecord && !isRecording) && 'border-2 border-border bg-surface/30',
+              (!canRecord && !isMicOpen) && 'border-2 border-border bg-surface/30',
             )}
           >
             {isRecording && <span className="absolute inset-0 rounded-full animate-ping bg-signal-red/20" />}
             {isKicoSpeaking && <span className="absolute inset-0 rounded-full animate-ping bg-primary/15" />}
             {connectionState === 'connecting' && <Loader2 size={28} className="text-muted animate-spin" />}
             {connectionState === 'connected' && !isRecording && (
-              <Mic size={28} className={cn('transition-colors duration-300', isKicoSpeaking ? 'text-border' : 'text-primary')} />
+              <Mic size={28} className={cn(
+                'transition-colors duration-300',
+                isKicoSpeaking ? 'text-border' : isMicOpen ? 'text-primary' : 'text-primary'
+              )} />
             )}
             {connectionState === 'connected' && isRecording && (
               <Square size={24} className="text-signal-red fill-signal-red" />
