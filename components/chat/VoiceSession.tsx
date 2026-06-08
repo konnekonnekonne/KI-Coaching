@@ -54,6 +54,8 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
   const [history, setHistory] = useState<TranscriptEntry[]>([])
   const [keyPhrase, setKeyPhrase] = useState<string | null>(null)
   const [keyPhraseVisible, setKeyPhraseVisible] = useState(false)
+  // Temporäres Debug-Log — wird nach Diagnose entfernt
+  const [debugEvents, setDebugEvents] = useState<string[]>([])
 
   const pcRef = useRef<RTCPeerConnection | null>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -87,15 +89,25 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
     try {
       const event = JSON.parse(e.data)
       console.log('[Voice DC]', event.type)
+      // Debug-Panel: letzte 8 Events sichtbar im UI
+      setDebugEvents(prev => [...prev.slice(-7), event.type])
 
       if (event.type === 'response.audio.delta') setIsKicoSpeaking(true)
       if (event.type === 'response.audio.done')  setIsKicoSpeaking(false)
 
-      if (event.type === 'conversation.item.input_audio_transcription.delta') {
+      // User-Transkript: Delta (live) — mehrere mögliche Eventnamen je nach Modell
+      if (
+        event.type === 'conversation.item.input_audio_transcription.delta' ||
+        event.type === 'input_audio_transcription.delta'
+      ) {
         setLiveTranscript(prev => prev + (event.delta ?? ''))
       }
 
-      if (event.type === 'conversation.item.input_audio_transcription.completed') {
+      // User-Transkript: Abgeschlossen
+      if (
+        event.type === 'conversation.item.input_audio_transcription.completed' ||
+        event.type === 'input_audio_transcription.completed'
+      ) {
         const text: string = event.transcript ?? ''
         if (text.trim()) {
           setLiveTranscript('')
@@ -208,20 +220,15 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
       dc.onmessage = (e) => messageHandlerRef.current?.(e)
 
       dc.onopen = () => {
-        // gpt-realtime-2 (GA Mai 2026): verschachteltes audio.input.transcription-Format
-        // whisper-1 ist Legacy — gpt-realtime-whisper liefert Delta-Events
+        // gpt-realtime-2: flat input_audio_transcription (Realtime Conversation API,
+        // nicht zu verwechseln mit der separaten Realtime Transcription API)
         dc.send(JSON.stringify({
           type: 'session.update',
           session: {
             turn_detection: null,
-            audio: {
-              input: {
-                transcription: {
-                  model: 'gpt-realtime-whisper',
-                  language: 'de',
-                  delay: 'low',
-                },
-              },
+            input_audio_transcription: {
+              model: 'gpt-4o-transcribe',
+              language: 'de',
             },
           },
         }))
@@ -421,6 +428,15 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
           'overflow-y-auto chat-scroll',
           'px-5 py-5 flex flex-col gap-0.5',
         )}>
+          {/* Debug: Event-Log — wird nach Diagnose entfernt */}
+          {debugEvents.length > 0 && (
+            <div className="mb-3 pb-3 border-b border-border/30">
+              <p className="caption text-muted/30 mb-1">DC-Events:</p>
+              {debugEvents.map((t, i) => (
+                <p key={i} className="caption text-muted/25 font-mono text-[10px] leading-relaxed">{t}</p>
+              ))}
+            </div>
+          )}
           {history.length === 0 && !isRecording && (
             <p className="caption text-muted/35 italic">Deine Worte erscheinen hier…</p>
           )}
