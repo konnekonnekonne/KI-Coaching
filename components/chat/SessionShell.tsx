@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Mic } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Mic, PhoneOff } from 'lucide-react'
 import { ChatWindow } from './ChatWindow'
 import { VoiceSession } from './VoiceSession'
 import { createClient } from '@/lib/supabase/client'
@@ -25,6 +26,7 @@ export function SessionShell({ sessionId, initialMessages }: SessionShellProps) 
   const [voiceHandoff, setVoiceHandoff] = useState<Message[] | null>(null)
   const [currentMessages, setCurrentMessages] = useState<Message[]>(initialMessages)
   const supabase = createClient()
+  const router = useRouter()
 
   function getInitialMode(): Mode {
     if (initialMessages.length > 0) return 'text'
@@ -78,30 +80,24 @@ export function SessionShell({ sessionId, initialMessages }: SessionShellProps) 
   if (mode === 'text' || (initialMessages.length > 0 && mode !== 'voice')) {
     return (
       <div className="flex flex-col h-full">
-        {/* Modus-Wechsel — nur anzeigen wenn noch keine Nachrichten (frische Session) */}
-        {chatMessages.length === 0 && (
-          <div className="flex-shrink-0 flex justify-end px-6 py-3 border-b border-border/40">
-            <button
-              onClick={switchToVoice}
-              className="flex items-center gap-1.5 caption text-muted/50 hover:text-primary transition-colors cursor-pointer"
-            >
-              <Mic size={12} />
-              Zu Sprach­modus wechseln
-            </button>
-          </div>
-        )}
-        {/* Modus-Wechsel mitten in einer Session */}
-        {chatMessages.length > 0 && (
-          <div className="flex-shrink-0 flex justify-end px-6 py-2 border-b border-border/40">
-            <button
-              onClick={switchToVoice}
-              className="flex items-center gap-1.5 caption text-muted/40 hover:text-primary transition-colors cursor-pointer"
-            >
-              <Mic size={12} />
-              Weiter per Sprache
-            </button>
-          </div>
-        )}
+        {/* Aktionsleiste — konsistent mit Voice-Modus */}
+        <div className="flex-shrink-0 flex items-center justify-end gap-5 px-6 py-2 border-b border-border/40">
+          <button
+            onClick={switchToVoice}
+            className="flex items-center gap-1.5 caption text-muted/40 hover:text-primary transition-colors cursor-pointer"
+          >
+            <Mic size={12} />
+            {chatMessages.length === 0 ? 'Zu Sprach­modus wechseln' : 'Weiter per Sprache'}
+          </button>
+          <span className="caption text-muted/20">·</span>
+          <button
+            onClick={() => router.push('/session')}
+            className="flex items-center gap-1.5 caption text-muted/30 hover:text-signal-red transition-colors cursor-pointer"
+          >
+            <PhoneOff size={12} />
+            Session beenden
+          </button>
+        </div>
         <div className="flex-1 overflow-hidden">
           <ChatWindow
             sessionId={sessionId}

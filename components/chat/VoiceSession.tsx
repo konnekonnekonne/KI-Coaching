@@ -68,6 +68,8 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
 
   const supabase = createClient()
   const userIdRef = useRef<string | null>(null)
+  // Deduplizierung: response.done und response.audio_transcript.done könnten beide feuern
+  const processedResponseIds = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -111,7 +113,41 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
         }
       }
 
+      // response.done: primäre Quelle für KICO-Transkript (gpt-realtime-2 GA)
+      // Enthält output[].content[].transcript mit dem vollständigen Text
+      if (event.type === 'response.done') {
+        const responseId: string = event.response?.id ?? event.event_id ?? ''
+        if (responseId && processedResponseIds.current.has(responseId)) return
+        if (responseId) processedResponseIds.current.add(responseId)
+
+        const outputs: unknown[] = event.response?.output ?? []
+        for (const item of outputs as { type?: string; role?: string; content?: { type?: string; transcript?: string }[] }[]) {
+          if (item.type === 'message' && item.role === 'assistant') {
+            for (const part of (item.content ?? [])) {
+              const text = part.transcript?.trim() ?? ''
+              if (text) {
+                setHistory(h => {
+                  const next = [...h, { role: 'kico' as const, text }]
+                  historyRef.current = next
+                  return next
+                })
+                setKeyPhraseVisible(false)
+                const { error } = await supabase.from('messages').insert({
+                  session_id: sessionId, user_id: userIdRef.current, role: 'assistant', content: text,
+                })
+                if (error) console.error('[Voice DB] KICO insert error:', error.message)
+              }
+            }
+          }
+        }
+      }
+
+      // response.audio_transcript.done: Fallback für ältere Modell-Versionen
       if (event.type === 'response.audio_transcript.done') {
+        const responseId: string = event.item_id ?? event.event_id ?? ''
+        if (responseId && processedResponseIds.current.has(responseId)) return
+        if (responseId) processedResponseIds.current.add(responseId)
+
         const text: string = event.transcript ?? ''
         if (text.trim()) {
           setHistory(h => {
@@ -172,11 +208,21 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
       dc.onmessage = (e) => messageHandlerRef.current?.(e)
 
       dc.onopen = () => {
+        // gpt-realtime-2 (GA Mai 2026): verschachteltes audio.input.transcription-Format
+        // whisper-1 ist Legacy — gpt-realtime-whisper liefert Delta-Events
         dc.send(JSON.stringify({
           type: 'session.update',
           session: {
             turn_detection: null,
-            input_audio_transcription: { model: 'whisper-1', language: 'de' },
+            audio: {
+              input: {
+                transcription: {
+                  model: 'gpt-realtime-whisper',
+                  language: 'de',
+                  delay: 'low',
+                },
+              },
+            },
           },
         }))
 
@@ -393,7 +439,7 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
               <span className="w-1.5 h-1.5 rounded-full bg-signal-red/70 animate-bounce [animation-delay:300ms]" />
             </div>
           )}
-          {liveTranscript && !isRecording && (
+          {liveTranscript && (
             <p className="caption text-kico-text/30 leading-relaxed py-1">
               {liveTranscript}<span className="animate-pulse">▌</span>
             </p>
