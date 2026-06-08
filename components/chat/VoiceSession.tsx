@@ -89,11 +89,17 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
     try {
       const event = JSON.parse(e.data)
       console.log('[Voice DC]', event.type, event.type === 'error' ? event : '')
-      // Debug-Panel: letzte 8 Events (inkl. Fehler)
+      // conversation.item.done: vollständig loggen — zeigt ob user-Audio drin ist
+      if (event.type === 'conversation.item.done') {
+        console.log('[Voice item.done]', JSON.stringify(event.item))
+      }
+      // Debug-Panel: letzte 20 Events (inkl. Fehler & session-Events)
       const label = event.type === 'error'
-        ? `ERROR: ${event.error?.message ?? JSON.stringify(event.error)}`
+        ? `ERR: ${event.error?.message ?? '?'}`
+        : event.type === 'session.updated' ? '✓ session.updated'
+        : event.type === 'session.created' ? '✓ session.created'
         : event.type
-      setDebugEvents(prev => [...prev.slice(-7), label])
+      setDebugEvents(prev => [...prev.slice(-19), label])
 
       if (event.type === 'response.output_audio.delta') setIsKicoSpeaking(true)
       if (event.type === 'response.output_audio.done')  setIsKicoSpeaking(false)
@@ -156,63 +162,16 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
         }
       }
 
-      // KICO-Transkript: direkt via response.output_audio_transcript.done (bestätigt)
-      if (event.type === 'response.output_audio_transcript.done') {
+      // KICO-Transkript: response.output_audio_transcript.done ist der bestätigte Event
+      // Dedup via item_id — verhindert Doppeleinträge falls andere Events dasselbe liefern
+      if (
+        event.type === 'response.output_audio_transcript.done' ||
+        event.type === 'response.audio_transcript.done'
+      ) {
         const text: string = event.transcript ?? ''
-        if (text.trim()) {
-          const responseId = event.item_id ?? event.event_id ?? ''
-          if (!responseId || !processedResponseIds.current.has(responseId)) {
-            if (responseId) processedResponseIds.current.add(responseId)
-            setHistory(h => {
-              const next = [...h, { role: 'kico' as const, text }]
-              historyRef.current = next
-              return next
-            })
-            setKeyPhraseVisible(false)
-            const { error } = await supabase.from('messages').insert({
-              session_id: sessionId, user_id: userIdRef.current, role: 'assistant', content: text,
-            })
-            if (error) console.error('[Voice DB] KICO insert error:', error.message)
-          }
-        }
-      }
-
-      // response.done: Fallback falls output_audio_transcript.done nicht feuert
-      if (event.type === 'response.done') {
-        const responseId: string = event.response?.id ?? event.event_id ?? ''
-        if (responseId && processedResponseIds.current.has(responseId)) return
-        if (responseId) processedResponseIds.current.add(responseId)
-
-        const outputs: unknown[] = event.response?.output ?? []
-        for (const item of outputs as { type?: string; role?: string; content?: { type?: string; transcript?: string }[] }[]) {
-          if (item.type === 'message' && item.role === 'assistant') {
-            for (const part of (item.content ?? [])) {
-              const text = part.transcript?.trim() ?? ''
-              if (text) {
-                setHistory(h => {
-                  const next = [...h, { role: 'kico' as const, text }]
-                  historyRef.current = next
-                  return next
-                })
-                setKeyPhraseVisible(false)
-                const { error } = await supabase.from('messages').insert({
-                  session_id: sessionId, user_id: userIdRef.current, role: 'assistant', content: text,
-                })
-                if (error) console.error('[Voice DB] KICO insert error:', error.message)
-              }
-            }
-          }
-        }
-      }
-
-      // response.audio_transcript.done: Fallback für ältere Modell-Versionen
-      if (event.type === 'response.audio_transcript.done') {
-        const responseId: string = event.item_id ?? event.event_id ?? ''
-        if (responseId && processedResponseIds.current.has(responseId)) return
-        if (responseId) processedResponseIds.current.add(responseId)
-
-        const text: string = event.transcript ?? ''
-        if (text.trim()) {
+        const itemId: string = event.item_id ?? ''
+        if (text.trim() && (!itemId || !processedResponseIds.current.has(itemId))) {
+          if (itemId) processedResponseIds.current.add(itemId)
           setHistory(h => {
             const next = [...h, { role: 'kico' as const, text }]
             historyRef.current = next
@@ -225,6 +184,7 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
           if (error) console.error('[Voice DB] KICO insert error:', error.message)
         }
       }
+      // response.done: KEIN Transkript-Extrakt mehr (verursacht Duplikate)
 
     } catch (err) {
       console.error('[Voice DC] Parse error:', err)
@@ -271,15 +231,17 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
       dc.onmessage = (e) => messageHandlerRef.current?.(e)
 
       dc.onopen = () => {
-        // gpt-realtime-2: flat input_audio_transcription (Realtime Conversation API,
-        // nicht zu verwechseln mit der separaten Realtime Transcription API)
+        // Zwei Updates: turn_detection und transcription getrennt senden
+        // (manche API-Versionen akzeptieren sie nicht gemeinsam)
+        dc.send(JSON.stringify({
+          type: 'session.update',
+          session: { turn_detection: null },
+        }))
         dc.send(JSON.stringify({
           type: 'session.update',
           session: {
-            turn_detection: null,
             input_audio_transcription: {
-              model: 'gpt-4o-transcribe',
-              language: 'de',
+              model: 'whisper-1',  // universell unterstützt in allen Versionen
             },
           },
         }))
