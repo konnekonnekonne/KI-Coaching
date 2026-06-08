@@ -102,6 +102,16 @@ body {
    Nutzung: className="heading-1" oder "body-text"
    ============================================================ */
 
+/* Sehr großer Display-Text für Begrüßungen und Einladungen */
+.display {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: clamp(2.75rem, 9vw, 4.5rem);
+  font-weight: 300;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
 .heading-1 {
   font-family: var(--font-fraunces), Georgia, serif;
   font-size: clamp(2rem, 5vw, 3rem);
