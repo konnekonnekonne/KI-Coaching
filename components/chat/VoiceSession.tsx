@@ -214,7 +214,12 @@ export function VoiceSession({ sessionId, onEnd }: VoiceSessionProps) {
   // ── Push-to-Talk ────────────────────────────────────────────────────────
 
   const startRecording = useCallback(() => {
-    if (connectionState !== 'connected' || isKicoSpeaking) return
+    if (connectionState !== 'connected') return
+    // KICO unterbrechen falls sie gerade spricht
+    if (isKicoSpeaking) {
+      dataChannelRef.current?.send(JSON.stringify({ type: 'response.cancel' }))
+      setIsKicoSpeaking(false)
+    }
     dataChannelRef.current?.send(JSON.stringify({ type: 'input_audio_buffer.clear' }))
     localStreamRef.current?.getAudioTracks().forEach(t => { t.enabled = true })
     setLiveTranscript('')
@@ -255,11 +260,12 @@ export function VoiceSession({ sessionId, onEnd }: VoiceSessionProps) {
   const statusText =
     connectionState === 'connecting' ? 'Verbinde…' :
     connectionState === 'error'      ? 'Verbindungsfehler — bitte neu laden' :
-    isKicoSpeaking                   ? 'KICO spricht…' :
     isRecording                      ? 'Nochmal tippen zum Senden' :
+    isKicoSpeaking                   ? 'Tippen zum Unterbrechen' :
                                        'Tippen zum Sprechen'
 
-  const canRecord = connectionState === 'connected' && !isKicoSpeaking
+  // Button immer aktiv wenn verbunden — Tippen während KICO spricht = Unterbrechen
+  const canRecord = connectionState === 'connected'
 
   return (
     <div className="flex flex-col md:flex-row h-full">
@@ -351,7 +357,7 @@ export function VoiceSession({ sessionId, onEnd }: VoiceSessionProps) {
           'px-5 py-5 flex flex-col gap-0.5',
         )}>
 
-          {history.length === 0 && !liveTranscript && (
+          {history.length === 0 && !isRecording && (
             <p className="caption text-muted/35 italic">Deine Worte erscheinen hier…</p>
           )}
 
@@ -366,7 +372,17 @@ export function VoiceSession({ sessionId, onEnd }: VoiceSessionProps) {
             </p>
           ))}
 
-          {liveTranscript && (
+          {/* Aufnahme läuft — Punkte statt falscher Live-Text-Versprechen */}
+          {isRecording && (
+            <div className="flex items-center gap-1 py-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-signal-red/70 animate-bounce [animation-delay:0ms]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-signal-red/70 animate-bounce [animation-delay:150ms]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-signal-red/70 animate-bounce [animation-delay:300ms]" />
+            </div>
+          )}
+
+          {/* Delta-Transkript (falls OpenAI es liefert) */}
+          {liveTranscript && !isRecording && (
             <p className="caption text-kico-text/30 leading-relaxed py-1">
               {liveTranscript}<span className="animate-pulse">▌</span>
             </p>

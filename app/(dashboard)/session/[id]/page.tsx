@@ -2,7 +2,6 @@ export const dynamic = 'force-dynamic'
 
 import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { Logo, ThemeToggle } from '@/components/ui'
 import { SessionShell } from '@/components/chat/SessionShell'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -36,24 +35,23 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="flex flex-col h-screen bg-bg">
-      <header className="flex-shrink-0 bg-surface border-b border-border">
-        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/session"
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-muted hover:text-kico-text transition-colors"
-              aria-label="Zurück zur Übersicht"
-            >
-              <ArrowLeft size={16} />
-            </Link>
-            <Logo size={22} />
-          </div>
-          <span className="caption hidden sm:block text-muted">{datum}</span>
-          <ThemeToggle />
-        </div>
+
+      {/* ── Minimaler Header ── */}
+      <header className="flex-shrink-0 h-11 flex items-center justify-between px-6 border-b border-border/40">
+        <Link
+          href="/session"
+          className="flex items-center gap-1.5 caption text-muted/50 hover:text-muted transition-colors"
+          aria-label="Zurück zur Übersicht"
+        >
+          <ArrowLeft size={13} />
+          Zurück
+        </Link>
+        <span className="caption text-muted/35 hidden sm:block">{datum}</span>
+        <div className="w-14" />
       </header>
 
-      <div className="flex-1 overflow-hidden max-w-3xl w-full mx-auto">
+      {/* ── Volle Breite — Voice-Layout braucht den Platz ── */}
+      <div className="flex-1 overflow-hidden">
         <SessionShell
           sessionId={session.id}
           initialMessages={
@@ -66,6 +64,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
           }
         />
       </div>
+
     </div>
   )
 }
