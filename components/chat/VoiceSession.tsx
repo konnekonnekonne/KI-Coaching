@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 interface VoiceSessionProps {
   sessionId: string
   priorMessages?: { role: 'user' | 'assistant'; content: string }[]
-  onEnd: (history: TranscriptEntry[]) => void  // "Weiter per Schrift"
+  onEnd: (history: TranscriptEntry[]) => void
 }
 
 type ConnectionState = 'idle' | 'connecting' | 'connected' | 'error'
@@ -49,14 +49,12 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
   const router = useRouter()
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle')
   const [isKicoSpeaking, setIsKicoSpeaking] = useState(false)
-  const [isMicOpen, setIsMicOpen] = useState(false)      // Mic-Track aktiv
+  const [isMicOpen, setIsMicOpen] = useState(false)       // Mic-Track aktiv
   const [isRecording, setIsRecording] = useState(false)   // VAD erkennt Sprache
-  const [liveTranscript, setLiveTranscript] = useState('')
+  const [isTranscribing, setIsTranscribing] = useState(false) // Whisper läuft
   const [history, setHistory] = useState<TranscriptEntry[]>([])
   const [keyPhrase, setKeyPhrase] = useState<string | null>(null)
   const [keyPhraseVisible, setKeyPhraseVisible] = useState(false)
-  // Temporäres Debug-Log — wird nach Diagnose entfernt
-  const [debugEvents, setDebugEvents] = useState<string[]>([])
 
   const pcRef = useRef<RTCPeerConnection | null>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -64,13 +62,17 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
   const dataChannelRef = useRef<RTCDataChannel | null>(null)
   const historyEndRef = useRef<HTMLDivElement>(null)
   const historyRef = useRef<TranscriptEntry[]>([])
-  // Ref-Handler: DataChannel benutzt immer die neueste Version — verhindert Stale-Closure
+  // Verhindert Stale-Closure: DataChannel verwendet immer den aktuellen Handler
   const messageHandlerRef = useRef<((e: MessageEvent) => void) | null>(null)
+
+  // MediaRecorder: User-Audio für Whisper-Transkription abgreifen
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
 
   const supabase = createClient()
   const userIdRef = useRef<string | null>(null)
-  // Deduplizierung: response.done und response.audio_transcript.done könnten beide feuern
-  const processedResponseIds = useRef<Set<string>>(new Set())
+  // Deduplizierung: verhindert Doppeleinträge bei mehrfach feuernden Events
+  const processedItemIds = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -80,115 +82,120 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
 
   useEffect(() => {
     historyEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [history, liveTranscript])
+  }, [history, isTranscribing])
 
-  // ── DataChannel Handler — als Ref gespeichert damit connect() nie stale ist ──
+  // ── DataChannel Handler ─────────────────────────────────────────────────
 
   const handleDataChannelMessage = useCallback(async (e: MessageEvent) => {
     try {
       const event = JSON.parse(e.data)
-      console.log('[Voice DC]', event.type, event.type === 'error' ? event : '')
-      // conversation.item.done: vollständig loggen — zeigt ob user-Audio drin ist
-      if (event.type === 'conversation.item.done') {
-        console.log('[Voice item.done]', JSON.stringify(event.item))
-      }
-      // Debug-Panel: letzte 20 Events (inkl. Fehler & session-Events)
-      const label = event.type === 'error'
-        ? `ERR: ${event.error?.message ?? '?'}`
-        : event.type === 'session.updated' ? '✓ session.updated'
-        : event.type === 'session.created' ? '✓ session.created'
-        : event.type
-      setDebugEvents(prev => [...prev.slice(-19), label])
 
-      if (event.type === 'response.output_audio.delta') setIsKicoSpeaking(true)
-      if (event.type === 'response.output_audio.done')  setIsKicoSpeaking(false)
-      if (event.type === 'response.audio.delta') setIsKicoSpeaking(true)
-      if (event.type === 'response.audio.done')  setIsKicoSpeaking(false)
-      // VAD-Events: User-Spracherkennung — steuert isRecording (pulsierender Kreis)
-      if (event.type === 'input_audio_buffer.speech_started') setIsRecording(true)
+      // Speaking-State: steuert Mic-Button-Animation
+      if (event.type === 'response.output_audio.delta' ||
+          event.type === 'response.audio.delta') {
+        setIsKicoSpeaking(true)
+      }
+      if (event.type === 'response.output_audio.done' ||
+          event.type === 'response.audio.done') {
+        setIsKicoSpeaking(false)
+      }
+
+      // VAD: User-Sprache erkannt — MediaRecorder starten
+      if (event.type === 'input_audio_buffer.speech_started') {
+        setIsRecording(true)
+        const stream = localStreamRef.current
+        if (stream && !mediaRecorderRef.current) {
+          const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+            ? 'audio/webm;codecs=opus'
+            : MediaRecorder.isTypeSupported('audio/webm')
+            ? 'audio/webm'
+            : ''
+          const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
+          audioChunksRef.current = []
+          recorder.ondataavailable = (ev) => {
+            if (ev.data.size > 0) audioChunksRef.current.push(ev.data)
+          }
+          recorder.start()
+          mediaRecorderRef.current = recorder
+        }
+      }
+
+      // VAD: Sprache beendet — Aufnahme stoppen, Whisper aufrufen
       if (event.type === 'input_audio_buffer.speech_stopped') {
         setIsRecording(false)
-        setLiveTranscript('') // live-cursor löschen bis transcription.completed kommt
-      }
 
-      // User-Transkript: via conversation.item.done (bestätigt im Event-Log)
-      // Enthält input_audio-Content mit transcript wenn User gesprochen hat
-      if (event.type === 'conversation.item.done') {
-        const item = event.item
-        if (item?.role === 'user') {
-          const parts: { type?: string; transcript?: string }[] = item.content ?? []
-          for (const part of parts) {
-            if (part.type === 'input_audio' && part.transcript?.trim()) {
-              const text = part.transcript.trim()
-              setLiveTranscript('')
-              setHistory(h => {
-                const next = [...h, { role: 'user' as const, text }]
-                historyRef.current = next
-                return next
-              })
-              const phrase = extractKeyPhrase(text)
-              if (phrase) { setKeyPhrase(phrase); setKeyPhraseVisible(true) }
-              const { error } = await supabase.from('messages').insert({
-                session_id: sessionId, user_id: userIdRef.current, role: 'user', content: text,
-              })
-              if (error) console.error('[Voice DB] User insert error:', error.message)
+        const recorder = mediaRecorderRef.current
+        if (recorder && recorder.state !== 'inactive') {
+          recorder.stop()
+          recorder.onstop = async () => {
+            mediaRecorderRef.current = null
+            const chunks = audioChunksRef.current
+            audioChunksRef.current = []
+
+            const blob = new Blob(chunks, { type: chunks[0]?.type ?? 'audio/webm' })
+            if (blob.size < 1000) return // zu kurz / Stille
+
+            setIsTranscribing(true)
+            try {
+              const fd = new FormData()
+              fd.append('audio', blob, 'audio.webm')
+              const res = await fetch('/api/transcribe', { method: 'POST', body: fd })
+              if (res.ok) {
+                const { text } = await res.json()
+                const trimmed = (text ?? '').trim()
+                if (trimmed) {
+                  setHistory(h => {
+                    const next = [...h, { role: 'user' as const, text: trimmed }]
+                    historyRef.current = next
+                    return next
+                  })
+                  const phrase = extractKeyPhrase(trimmed)
+                  if (phrase) { setKeyPhrase(phrase); setKeyPhraseVisible(true) }
+                  const { error } = await supabase.from('messages').insert({
+                    session_id: sessionId,
+                    user_id: userIdRef.current,
+                    role: 'user',
+                    content: trimmed,
+                  })
+                  if (error) console.error('[Voice DB] User insert error:', error.message)
+                }
+              } else {
+                console.error('[Voice Whisper] HTTP', res.status)
+              }
+            } catch (err) {
+              console.error('[Voice Whisper] Fetch error:', err)
+            } finally {
+              setIsTranscribing(false)
             }
           }
         }
       }
 
-      // User-Transkript: Delta (live) — falls doch aktivierbar
-      if (
-        event.type === 'conversation.item.input_audio_transcription.delta' ||
-        event.type === 'input_audio_transcription.delta'
-      ) {
-        setLiveTranscript(prev => prev + (event.delta ?? ''))
-      }
-
-      // User-Transkript: Abgeschlossen (separates Event wenn input_audio_transcription aktiv)
-      if (
-        event.type === 'conversation.item.input_audio_transcription.completed' ||
-        event.type === 'input_audio_transcription.completed'
-      ) {
-        const text: string = event.transcript ?? ''
-        if (text.trim()) {
-          setLiveTranscript('')
-          setHistory(h => {
-            // Nur hinzufügen wenn nicht schon via conversation.item.done erfasst
-            const alreadyAdded = h.some(e => e.role === 'user' && e.text === text)
-            if (alreadyAdded) return h
-            const next = [...h, { role: 'user' as const, text }]
-            historyRef.current = next
-            return next
-          })
-          const phrase = extractKeyPhrase(text)
-          if (phrase) { setKeyPhrase(phrase); setKeyPhraseVisible(true) }
-        }
-      }
-
-      // KICO-Transkript: response.output_audio_transcript.done ist der bestätigte Event
-      // Dedup via item_id — verhindert Doppeleinträge falls andere Events dasselbe liefern
+      // KICO-Transkript: via response.output_audio_transcript.done (bestätigtes Event)
+      // item_id-Dedup verhindert Doppeleinträge
       if (
         event.type === 'response.output_audio_transcript.done' ||
         event.type === 'response.audio_transcript.done'
       ) {
         const text: string = event.transcript ?? ''
         const itemId: string = event.item_id ?? ''
-        if (text.trim() && (!itemId || !processedResponseIds.current.has(itemId))) {
-          if (itemId) processedResponseIds.current.add(itemId)
+        if (text.trim() && (!itemId || !processedItemIds.current.has(itemId))) {
+          if (itemId) processedItemIds.current.add(itemId)
           setHistory(h => {
-            const next = [...h, { role: 'kico' as const, text }]
+            const next = [...h, { role: 'kico' as const, text: text.trim() }]
             historyRef.current = next
             return next
           })
           setKeyPhraseVisible(false)
           const { error } = await supabase.from('messages').insert({
-            session_id: sessionId, user_id: userIdRef.current, role: 'assistant', content: text,
+            session_id: sessionId,
+            user_id: userIdRef.current,
+            role: 'assistant',
+            content: text.trim(),
           })
           if (error) console.error('[Voice DB] KICO insert error:', error.message)
         }
       }
-      // response.done: KEIN Transkript-Extrakt mehr (verursacht Duplikate)
 
     } catch (err) {
       console.error('[Voice DC] Parse error:', err)
@@ -231,13 +238,9 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
 
       const dc = pc.createDataChannel('oai-events')
       dataChannelRef.current = dc
-      // Ref-Indirektion: DataChannel ruft immer den aktuellen Handler auf
       dc.onmessage = (e) => messageHandlerRef.current?.(e)
 
       dc.onopen = () => {
-        // input_audio_transcription ist server-seitig gesetzt — hier nicht nötig.
-        // turn_detection: VAD läuft als Standard, wir steuern nur per Mic-Toggle.
-
         if (priorMessages && priorMessages.length > 0) {
           const context = priorMessages.slice(-20)
           for (const msg of context) {
@@ -252,12 +255,20 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
           }
           dc.send(JSON.stringify({
             type: 'conversation.item.create',
-            item: { type: 'message', role: 'user', content: [{ type: 'input_text', text: 'Wir wechseln jetzt von Schrift zu Sprache. Bitte führe das Gespräch nahtlos fort.' }] },
+            item: {
+              type: 'message',
+              role: 'user',
+              content: [{ type: 'input_text', text: 'Wir wechseln jetzt von Schrift zu Sprache. Bitte führe das Gespräch nahtlos fort.' }],
+            },
           }))
         } else {
           dc.send(JSON.stringify({
             type: 'conversation.item.create',
-            item: { type: 'message', role: 'user', content: [{ type: 'input_text', text: 'Bitte eröffne das Gespräch.' }] },
+            item: {
+              type: 'message',
+              role: 'user',
+              content: [{ type: 'input_text', text: 'Bitte eröffne das Gespräch.' }],
+            },
           }))
         }
         dc.send(JSON.stringify({ type: 'response.create' }))
@@ -283,14 +294,12 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Mic Toggle (PTT ohne manuellen Commit) ──────────────────────────────
-  // VAD übernimmt Commit + Response-Trigger sobald Sprache endet.
-  // Wir schalten nur den Mic-Track an/aus — kein input_audio_buffer.commit nötig.
+  // ── Mic Toggle ──────────────────────────────────────────────────────────
+  // VAD übernimmt Commit + Response-Trigger — wir schalten nur den Mic-Track.
 
   const handleRecordButton = useCallback(() => {
     if (connectionState !== 'connected') return
     if (!isMicOpen) {
-      // Mic öffnen — KICO ggf. unterbrechen
       if (isKicoSpeaking) {
         dataChannelRef.current?.send(JSON.stringify({ type: 'response.cancel' }))
         setIsKicoSpeaking(false)
@@ -298,7 +307,6 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
       localStreamRef.current?.getAudioTracks().forEach(t => { t.enabled = true })
       setIsMicOpen(true)
     } else {
-      // Mic schließen — VAD erkennt Stille und committed automatisch
       localStreamRef.current?.getAudioTracks().forEach(t => { t.enabled = false })
       setIsMicOpen(false)
     }
@@ -307,6 +315,11 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
   // ── Cleanup & Ende ──────────────────────────────────────────────────────
 
   const cleanup = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop()
+    }
+    mediaRecorderRef.current = null
+    audioChunksRef.current = []
     localStreamRef.current?.getTracks().forEach(t => t.stop())
     pcRef.current?.close()
     pcRef.current = null
@@ -317,14 +330,12 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
     setIsRecording(false)
   }, [])
 
-  // "Weiter per Schrift" — übergibt History an SessionShell
   const handleSwitchToText = useCallback(() => {
     const snapshot = historyRef.current
     cleanup()
     onEnd(snapshot)
   }, [cleanup, onEnd])
 
-  // "Session beenden" — zurück zum Dashboard
   const handleEndSession = useCallback(() => {
     cleanup()
     router.push('/session')
@@ -380,7 +391,7 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
             {connectionState === 'connected' && !isRecording && (
               <Mic size={28} className={cn(
                 'transition-colors duration-300',
-                isKicoSpeaking ? 'text-border' : isMicOpen ? 'text-primary' : 'text-primary'
+                isMicOpen ? 'text-primary' : 'text-primary'
               )} />
             )}
             {connectionState === 'connected' && isRecording && (
@@ -431,26 +442,20 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
           'overflow-y-auto chat-scroll',
           'px-5 py-5 flex flex-col gap-0.5',
         )}>
-          {/* Debug: Event-Log — wird nach Diagnose entfernt */}
-          {debugEvents.length > 0 && (
-            <div className="mb-3 pb-3 border-b border-border/30">
-              <p className="caption text-muted/30 mb-1">DC-Events:</p>
-              {debugEvents.map((t, i) => (
-                <p key={i} className="caption text-muted/25 font-mono text-[10px] leading-relaxed">{t}</p>
-              ))}
-            </div>
-          )}
-          {history.length === 0 && !isRecording && (
+          {history.length === 0 && !isRecording && !isTranscribing && (
             <p className="caption text-muted/35 italic">Deine Worte erscheinen hier…</p>
           )}
           {history.map((entry, i) => (
             <p key={i} className={cn(
               'caption leading-relaxed py-1',
-              entry.role === 'user' ? 'text-kico-text/60' : 'text-muted/50 italic pl-3 border-l border-border/50'
+              entry.role === 'user'
+                ? 'text-kico-text/60'
+                : 'text-muted/50 italic pl-3 border-l border-border/50'
             )}>
               {entry.text}
             </p>
           ))}
+          {/* VAD erkennt Sprache */}
           {isRecording && (
             <div className="flex items-center gap-1 py-2">
               <span className="w-1.5 h-1.5 rounded-full bg-signal-red/70 animate-bounce [animation-delay:0ms]" />
@@ -458,10 +463,9 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
               <span className="w-1.5 h-1.5 rounded-full bg-signal-red/70 animate-bounce [animation-delay:300ms]" />
             </div>
           )}
-          {liveTranscript && (
-            <p className="caption text-kico-text/30 leading-relaxed py-1">
-              {liveTranscript}<span className="animate-pulse">▌</span>
-            </p>
+          {/* Whisper transkribiert */}
+          {isTranscribing && !isRecording && (
+            <p className="caption text-muted/30 py-1 animate-pulse">…</p>
           )}
           <div ref={historyEndRef} />
         </div>

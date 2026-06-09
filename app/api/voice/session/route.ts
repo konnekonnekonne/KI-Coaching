@@ -29,11 +29,6 @@ export async function POST() {
           type: 'realtime',
           model: 'gpt-realtime-2',
           instructions: SYSTEM_PROMPT,
-          // Input-Transkription server-seitig aktivieren (client-seitiges session.update
-          // wird von gpt-realtime-2 für diese Felder nicht akzeptiert)
-          input_audio_transcription: {
-            model: 'whisper-1',
-          },
           audio: {
             output: {
               voice: 'shimmer',

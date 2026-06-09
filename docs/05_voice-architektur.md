@@ -86,28 +86,17 @@ Die OpenAI Realtime Beta API wurde am 12. Mai 2026 abgeschaltet. Die GA-Version 
 }
 ```
 
-`turn_detection` und `input_audio_transcription` werden **nicht** im `client_secrets`-Call gesetzt (GA-API erlaubt das nicht), sondern nach Verbindungsaufbau via DataChannel-Event `session.update`:
+**Dokumentierte Einschränkung — User-Transkription:**
+`input_audio_transcription` wird von `gpt-realtime-2` weder über den `client_secrets`-Call noch über `session.update` unterstützt:
 
-```json
-{
-  "type": "session.update",
-  "session": {
-    "turn_detection": {
-      "type": "semantic_vad",
-      "silence_duration_ms": 1800,
-      "threshold": 0.8
-    },
-    "input_audio_transcription": {
-      "model": "whisper-1",
-      "language": "de"
-    }
-  },
-  "expires_after": {
-    "anchor": "created_at",
-    "seconds": 3600
-  }
-}
-```
+- Über `client_secrets`: API antwortet mit `400 Bad Request`
+- Über `session.update` nach Verbindungsaufbau: API akzeptiert das Event, ignoriert das Feld aber still — `conversation.item.done` liefert für User-Audio stets `transcript: null`
+
+Empirisch bestätigt im Entwicklungsprozess (Juni 2026). Das Feld ist in der GA-Version des WebRTC-Endpunkts schlicht nicht verfügbar.
+
+**Workaround:** User-Äußerungen werden client-seitig über `MediaRecorder` aufgezeichnet. Wenn das VAD-Event `input_audio_buffer.speech_stopped` eintrifft, wird der Audio-Chunk an den eigenen Endpunkt `/api/transcribe` gesendet, der `whisper-1` aufruft. Latenz: ~1–2 Sekunden nach Sprachende. Dies ist kein Live-Transkript, sondern eine Post-turn-Transkription.
+
+**Geprüfte Alternative:** `gpt-4o-realtime-preview` (das ältere Modell mit dokumentierter `input_audio_transcription`-Unterstützung) ist über den WebRTC-Endpunkt (`/v1/realtime/client_secrets` + `/v1/realtime/calls`) **nicht verfügbar** — ebenfalls mit `400` bestätigt. Diese beiden Endpunkte sind exklusiv an `gpt-realtime-2` gebunden. Eine Migration auf `gpt-4o-realtime-preview` würde einen vollständigen Umbau auf WebSocket mit server-seitigem Proxy erfordern.
 
 ---
 
@@ -165,6 +154,7 @@ Laufende Sessions mit vorhandenen Nachrichten starten direkt im Text-Modus. Ein 
 | Vapi / Retell | Orchestrierungspipeline, Latenz 700–1500ms, kein Semantic VAD |
 | ElevenLabs Conversational AI | Pipeline-Architektur, gutes TTS aber keine nativen Audio-In/Out-Modelle |
 | Claude + Whisper + TTS Pipeline | Latenz 1,5–3s, prosodischer Verlust an zwei Schnittstellen |
+| `gpt-4o-realtime-preview` via WebRTC | Nicht verfügbar über `/v1/realtime/client_secrets` — 400-Fehler bestätigt. WebRTC-Endpunkt ist exklusiv an `gpt-realtime-2` gebunden. Hätte native `input_audio_transcription`, ist aber über diesen Weg nicht erreichbar. |
 | Gemini Live (Vertex AI) | Keine dokumentierte Semantic VAD-Entsprechung (Stand Juni 2026); als regulatorischer Fallback für EU-Datenspeicherung notiert falls OpenAI-Enterprise-Vereinbarung nicht realisierbar |
 
 ---
@@ -197,7 +187,8 @@ Die OpenAI Realtime API erfordert **Usage Tier 2** (mind. $50 Gesamtausgaben sei
 | Datei | Funktion |
 |-------|----------|
 | `app/api/voice/session/route.ts` | Server: Ephemeral Key generieren |
-| `components/chat/VoiceSession.tsx` | Client: WebRTC-Verbindung, Audio, UI |
+| `app/api/transcribe/route.ts` | Server: Audio-Chunk → Whisper-1 → Transkript (User-Transkriptions-Workaround) |
+| `components/chat/VoiceSession.tsx` | Client: WebRTC-Verbindung, Audio, MediaRecorder, UI |
 | `components/chat/SessionShell.tsx` | Moduswahl und Wrapper |
 | `app/(dashboard)/session/page.tsx` | Server Component: lädt SessionShell |
 | `lib/system-prompt.ts` | Gemeinsamer Prompt für Text und Voice |

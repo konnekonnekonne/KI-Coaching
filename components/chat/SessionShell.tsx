@@ -28,16 +28,22 @@ export function SessionShell({ sessionId, initialMessages }: SessionShellProps) 
   const supabase = createClient()
   const router = useRouter()
 
-  function getInitialMode(): Mode {
-    if (initialMessages.length > 0) return 'text'
+  // Initialer Mode: server und client starten identisch (kein sessionStorage im SSR)
+  // → verhindert React-Hydration-Fehler #418
+  const [mode, setMode] = useState<Mode>(() =>
+    initialMessages.length > 0 ? 'text' : 'choose'
+  )
+
+  // sessionStorage-Wert erst nach dem Mounten lesen (nur im Browser verfügbar)
+  useEffect(() => {
+    if (initialMessages.length > 0) return
     try {
       const saved = sessionStorage.getItem(`kico-mode-${sessionId}`)
-      if (saved === 'voice') return 'voice'
-      if (saved === 'text') return 'text'
-    } catch { /* SSR */ }
-    return 'choose'
-  }
-  const [mode, setMode] = useState<Mode>(getInitialMode)
+      if (saved === 'voice') setMode('voice')
+      else if (saved === 'text') setMode('text')
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Voice → Text: History direkt im Speicher übergeben, DB-Fallback wenn leer
   async function handleVoiceEnd(history: { role: 'user' | 'kico'; text: string }[]) {
