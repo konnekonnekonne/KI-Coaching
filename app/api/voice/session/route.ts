@@ -34,9 +34,6 @@ export async function POST() {
               voice: 'shimmer',
             },
           },
-          turn_detection: {
-            type: 'none',
-          },
         },
       }),
     })
