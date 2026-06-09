@@ -195,7 +195,7 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
         // 'low' fragt nach Verlangsamung innerhalb des Mechanismus → noch nicht getestet.
         dc.send(JSON.stringify({
           type: 'session.update',
-          session: { turn_detection: { type: 'semantic_vad', eagerness: 'low' } },
+          session: { type: 'realtime', turn_detection: { type: 'semantic_vad', eagerness: 'low' } },
         }))
         console.log('[Voice VAD] session.update gesendet: semantic_vad eagerness:low')
 
