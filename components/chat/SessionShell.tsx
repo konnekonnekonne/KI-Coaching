@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Mic, PhoneOff } from 'lucide-react'
 import { ChatWindow } from './ChatWindow'
