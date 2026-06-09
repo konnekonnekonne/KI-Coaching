@@ -103,15 +103,6 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
     try {
       const event = JSON.parse(e.data)
 
-      // VAD-Test: Logging für session.updated und error
-      if (event.type === 'session.updated') {
-        const td = event.session?.turn_detection
-        console.log('[Voice VAD] session.updated — turn_detection:', JSON.stringify(td))
-      }
-      if (event.type === 'error') {
-        console.warn('[Voice VAD] error event:', JSON.stringify(event.error ?? event))
-      }
-
       if (event.type === 'response.output_audio.delta' ||
           event.type === 'response.audio.delta') {
         setIsKicoSpeaking(true)
@@ -189,15 +180,13 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
       dc.onmessage = (e) => messageHandlerRef.current?.(e)
 
       dc.onopen = () => {
-        // Semantic VAD auf niedrigste Reaktionsbereitschaft setzen — mehr Raum für Denkpausen
-        // Test: eagerness: 'low' ist inhaltlich anders als type: 'none' (der 400 auslöste).
-        // 'none' fragte nach Deaktivierung → abgelehnt.
-        // 'low' fragt nach Verlangsamung innerhalb des Mechanismus → noch nicht getestet.
-        dc.send(JSON.stringify({
-          type: 'session.update',
-          session: { type: 'realtime', turn_detection: { type: 'semantic_vad', eagerness: 'low' } },
-        }))
-        console.log('[Voice VAD] session.update gesendet: semantic_vad eagerness:low')
+        // turn_detection ist auf gpt-realtime-2 via WebRTC nicht konfigurierbar.
+        // Empirisch getestet (Juni 2026):
+        //   client_secrets + turn_detection → 400 Bad Request
+        //   session.update + type:'none'    → silently ignored (kein Effekt)
+        //   session.update + semantic_vad   → unknown_parameter error
+        // Das Feld existiert auf diesem Modell/Endpunkt nicht.
+        // Dokumentiert als Forschungsbefund in docs/08_kapitel-schweige-problem.md
 
         if (priorMessages && priorMessages.length > 0) {
           for (const msg of priorMessages.slice(-20)) {
