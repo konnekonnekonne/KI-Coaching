@@ -376,11 +376,11 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
               'transition-all duration-300 cursor-pointer',
               'disabled:opacity-30 disabled:cursor-not-allowed',
               !isMicOpen && canRecord && [
-                'border-2 border-primary/30 bg-primary/5',
-                'hover:border-primary hover:bg-primary/10 hover:scale-105',
+                'border-2 border-border bg-surface/40',
+                'hover:border-primary/50 hover:bg-primary/5 hover:scale-105',
                 'active:scale-95',
               ],
-              isMicOpen && !isRecording && 'border-2 border-primary/60 bg-primary/10 scale-105',
+              isMicOpen && !isRecording && 'border-2 border-primary bg-primary/20 scale-105',
               isRecording && 'border-2 border-signal-red bg-signal-red/10 scale-105',
               (!canRecord && !isMicOpen) && 'border-2 border-border bg-surface/30',
             )}
@@ -391,7 +391,7 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
             {connectionState === 'connected' && !isRecording && (
               <Mic size={28} className={cn(
                 'transition-colors duration-300',
-                isMicOpen ? 'text-primary' : 'text-primary'
+                isMicOpen ? 'text-primary' : 'text-muted/40'
               )} />
             )}
             {connectionState === 'connected' && isRecording && (
