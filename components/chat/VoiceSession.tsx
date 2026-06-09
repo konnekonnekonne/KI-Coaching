@@ -32,6 +32,24 @@ const KEY_INDICATORS = [
   'mir ist wichtig', 'was mich', 'was ich',
 ]
 
+// Whisper-Halluzinationen: bei kurzem/stillem Audio generiert Whisper bekannte
+// Standardtexte aus Trainingsdaten — diese werden herausgefiltert
+const WHISPER_HALLUCINATIONS = [
+  'untertitel der amara.org-community',
+  'amara.org community subtitles',
+  'untertitel von',
+  'untertitel: ',
+  'thank you for watching',
+  'thanks for watching',
+  'übersetzt von',
+  '♪',
+]
+
+function isWhisperHallucination(text: string): boolean {
+  const lower = text.toLowerCase().trim()
+  return lower.length < 4 || WHISPER_HALLUCINATIONS.some(h => lower.includes(h))
+}
+
 function extractKeyPhrase(text: string): string | null {
   const sentences = text.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean)
   for (const sentence of sentences) {
@@ -281,7 +299,7 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
             if (res.ok) {
               const { text } = await res.json()
               const trimmed = (text ?? '').trim()
-              if (trimmed) {
+              if (trimmed && !isWhisperHallucination(trimmed)) {
                 setHistory(h => {
                   const next = [...h, { role: 'user' as const, text: trimmed }]
                   historyRef.current = next
