@@ -162,6 +162,52 @@ Der Prompt, der aus einem Rohtranskript eine Feldnotiz generiert, ist eine eigen
 
 ---
 
+## Voice-Architektur
+
+### B-15 — QN-12 Gesprächsrhythmik formal in Qualitätsnormen aufnehmen
+**Priorität:** Hoch
+**Status:** Beschlossen, noch nicht eingetragen
+
+Das Schweige-Problem ist als Forschungsbefund dokumentiert und als QN-12 angekündigt. Die Norm muss noch formal in `qualitaetsnormen.md` eingetragen werden.
+
+Standard: Jede Voice-Komponente, die für diese Plattform evaluiert wird, muss nachweislich konfigurierbare oder deaktivierbare Turn Detection unterstützen. Die Konfigurierbarkeit muss durch Funktionstest verifiziert werden, nicht durch Herstellerdokumentation allein.
+
+---
+
+### B-16 — Voice-Architektur-Dokumentation bereinigen
+**Priorität:** Mittel
+**Status:** Offen
+
+`docs/05_voice-architektur.md` enthält in der Semantic-VAD-Sektion noch:
+- `silence_duration_ms: 1800` als geplante Konfiguration
+- `threshold: 0.8` als geplante Konfiguration
+
+Beide Parameter wurden nie wirksam. Die vollständige Testdokumentation liegt in `docs/08_kapitel-schweige-problem.md`. Die technische Architektur-Dokumentation sollte mit diesem Stand synchronisiert werden.
+
+---
+
+### B-17 — Auftrag-UI-Screen (A in AZF)
+**Priorität:** Mittel
+**Status:** Konzipiert, nicht gebaut
+
+Das System-Prompt formuliert: "Der Auftrag (A) wurde bereits durch die Benutzeroberfläche eingeholt." Diese UI existiert noch nicht. Derzeit startet KICO direkt mit der Ziel-Frage, ohne dass der Coachee bewusst zugestimmt hat.
+
+Vorschlag: Ein einfacher Zwischenscreen vor dem eigentlichen Session-Start. Fragt nach dem Anliegen (1–2 Sätze, formfrei) und holt die informierte Einwilligung ein. Übergibt das Anliegen dann als Kontext an KICO, ohne dass KICO nochmals danach fragt.
+
+Abhängigkeit: Kein Blocker, kann unabhängig umgesetzt werden.
+
+---
+
+### B-18 — Coaching-Frage als persistenter Anker
+**Priorität:** Mittel
+**Status:** Konzipiert, nicht gebaut
+
+Der System-Prompt beschreibt die Coaching-Frage als "roten Faden", den KICO wörtlich zurückspiegelt und durch die Session trägt. Methodisch wäre es stärker, wenn die Frage auch visuell präsent bleibt: einmalig vom Coachee formuliert, dann fixiert am oberen Rand des Chat-Fensters sichtbar.
+
+Umsetzung: Nach Erkennung der Coachingfrage (Pattern im KICO-Output oder explizites DB-Feld) wird sie aus dem Chat-Verlauf extrahiert und als `sessions.coaching_question` gespeichert. Die Session-UI zeigt sie fixiert über dem Chat.
+
+---
+
 ## Forschung / Dokumentation
 
 ### B-11 — Datenschutz-Gap Voice (DSGVO)
@@ -174,13 +220,26 @@ Audio-Daten laufen über OpenAI-Infrastruktur ohne garantierte EU-Datenspeicheru
 
 ### B-14 — Abschlussarbeit: Kapitelstruktur klären
 **Priorität:** Mittel
-**Status:** Offen
+**Status:** Teilweise offen
 
 Drei offene Punkte zur Struktur der Abschlussarbeit:
 
 1. **„x"-Kapitel-Entscheidung:** Das Kapitel „Technische Umsetzung der Plattform" (aktuell mit Platzhalter „x" nummeriert) ist als Legacy markiert. Entscheiden: entfernen, in Kapitel 3 integrieren oder als eigenständiges Kapitel weiterführen.
 2. **Fußnotenformat:** Der Abschnitt „Von der Instruktion zur Architektur" in Kapitel 3 verwendet `¹` (Hochzahl), während das restliche Kapitel `[1]`, `[2]` etc. verwendet. Der Querverweis auf die RLHF-Problematik sollte als `[3]` inline gesetzt werden (entspricht der arXiv-Quelle aus Kapitel 2).
 3. **Folgekapitel:** Nach Kapitel 3 fehlen noch Evaluation/Diskussion und Fazit. Strukturplanung steht aus.
+4. **Kapitel [X] einordnen:** Das Schweige-Problem-Kapitel (`docs/08_kapitel-schweige-problem.md`) muss in die Kapitelstruktur der Arbeit eingegliedert werden. Möglichkeiten: als Unterkapitel von Kapitel 3 (nach der Voice-Architektur-Sektion), oder als eigenständiges Kapitel 4 vor der Evaluation.
+
+---
+
+### B-19 — Abschlussarbeit: Drei neue akademische Quellen einarbeiten
+**Priorität:** Hoch
+**Status:** Offen
+
+Die Recherche für das Schweige-Problem-Kapitel hat drei Quellen identifiziert, die auch für Kapitel 2 relevant sind und dort zitiert werden könnten:
+
+- **Sedlakova & Trachsel (2026)** — Bestätigt die Stille-Problematik für KI-Gesprächssysteme generell; ergänzt die Diskussion über strukturelle Grenzen von KI im therapeutischen/Coaching-Kontext (passt zu Kapitel 2, Abschnitt "Was KI nicht kann").
+- **Jiang et al. (CHI 2026), arXiv:2602.06134** — Taxonomie von fünf Stille-Typen im Coaching; empirische Belege für den Wert von Pacing. Direkt anwendbar auf die Evaluation in Kapitel 5/6.
+- **Kasner et al. (2025), arXiv:2510.22610** — 37,1 % unberechtigte Unterbrechungsrate bei Voice-KI; konkreter Messwert für den Methodenmangel.
 
 ---
 
