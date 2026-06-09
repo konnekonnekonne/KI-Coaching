@@ -176,13 +176,19 @@ function DashboardContent({
   const [mode, setMode] = useState<'text' | 'voice'>('text')
   const [dark, setDark] = useState(false)
   const [themeMounted, setThemeMounted] = useState(false)
+  // Begrüßung erst client-seitig berechnen — verhindert React-Hydration-Fehler #418
+  // (Server-Timezone UTC ≠ Browser-Timezone des Coachees)
+  const [greeting, setGreeting] = useState<{ heading: string; sub: string }>({
+    heading: `Hallo, ${firstName}.`,
+    sub: '',
+  })
   const supabase = createClient()
-  const greeting = getGreeting(firstName)
 
   useEffect(() => {
+    setGreeting(getGreeting(firstName))
     setDark(document.documentElement.classList.contains('dark'))
     setThemeMounted(true)
-  }, [])
+  }, [firstName])
 
   function toggleTheme() {
     const next = !dark
