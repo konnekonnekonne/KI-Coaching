@@ -124,11 +124,21 @@ Im Dashboard ist "Zugriff auf Protokolle" als Feature geplant, aber nicht umgese
 
 ---
 
+### B-21 — Migration 002 fehlte live, Onboarding defekt
+**Priorität:** Hoch
+**Status:** Behoben (Juli 2026)
+
+Per Supabase-MCP-Zugriff verifiziert: `002_add_firstname.sql` war auf dem aktuellen Supabase-Projekt (`rccugewhmscysohzewfw`) nie ausgeführt worden — `profiles.first_name` und `sessions.message_count` fehlten live, obwohl beide Migrationsdateien im Repo vorhanden sind. Supabase's eigene Migrationshistorie (`list_migrations`) war leer, was darauf hindeutet, dass SQL bisher per Copy-Paste im SQL-Editor statt über die CLI ausgeführt wurde. Die fehlende `first_name`-Spalte machte den Vorname-Onboarding-Flow ([Dashboard.tsx](../components/dashboard/Dashboard.tsx)) faktisch unbenutzbar: Jeder neue Account blieb am Onboarding-Screen hängen, weil das Update gegen eine nicht existierende Spalte fehlschlug. Migration wurde per `apply_migration`-Tool nachgezogen und ist jetzt getrackt. Details: [02_datenbankschema.md](02_datenbankschema.md).
+
+Diese Klasse von Fehlern (Doku/Migration vs. Live-Realität) ist ein Argument dafür, den Live-Schema-Stand künftig regelmäßig per Supabase-MCP zu verifizieren statt sich auf Migrationsdateien allein zu verlassen — besonders relevant, da die Cascaded-Voice-Migration (B-20) neue Tabellen/Spalten einführen wird.
+
+---
+
 ### B-09 — Voice-Transkript-Speicherung noch nicht auf neuem Supabase-Projekt bestätigt
 **Priorität:** Hoch
-**Status:** Ungetestet
+**Status:** Ungetestet — durch B-20 in der bisherigen Form hinfällig
 
-Nach der Supabase-Migration wurde der user_id-Fix für Voice-Transkripte committed, aber nicht live getestet. Es ist unklar, ob Voice-Nachrichten korrekt in der neuen Datenbank landen.
+Nach der Supabase-Migration wurde der user_id-Fix für Voice-Transkripte committed, aber nicht live getestet. Es ist unklar, ob Voice-Nachrichten korrekt in der neuen Datenbank landen. *Update Juli 2026:* Die veraltete Projekt-Referenz in `docs/06_deployment.md` (`ejxiboybvwpeknghlvar` statt `rccugewhmscysohzewfw`) ist korrigiert — das war die Doku-Seite dieser Migration, die tatsächliche Datenlage in der neuen DB ist damit aber weiterhin ungetestet. *Bezug zu B-20:* Betrifft die Whisper-Workaround-Speicherung der Speech-to-Speech-Architektur, die im Zuge der Migration ersetzt wird — die Transkript-Speicherung wird in der Cascaded-Architektur neu aufgebaut, nicht mehr repariert.
 
 ---
 
@@ -136,7 +146,7 @@ Nach der Supabase-Migration wurde der user_id-Fix für Voice-Transkripte committ
 **Priorität:** Niedrig
 **Status:** Bewusst zurückgestellt
 
-Ein nicht-sprachliches Präsenzsignal bei längerem Schweigen (z.B. sanftes Ton-Signal nach 8 Sekunden ohne Sprache) wäre methodisch wertvoll — Stille als Werkzeug, nicht als Leere. Technisch möglich über DataChannel-Events, aber noch nicht konzipiert.
+Ein nicht-sprachliches Präsenzsignal bei längerem Schweigen (z.B. sanftes Ton-Signal nach 8 Sekunden ohne Sprache) wäre methodisch wertvoll — Stille als Werkzeug, nicht als Leere. Technisch möglich über DataChannel-Events, aber noch nicht konzipiert. *Bezug zu B-20:* In der Cascaded-Architektur an die Wahl des Turn-Detectors gekoppelt — bei der Neuplanung mitzudenken, nicht mehr an OpenAI-DataChannel-Events gebunden.
 
 ---
 
@@ -164,6 +174,16 @@ Der Prompt, der aus einem Rohtranskript eine Feldnotiz generiert, ist eine eigen
 
 ## Voice-Architektur
 
+### B-20 — Migration zu Cascaded Voice-Architektur
+**Priorität:** Hoch
+**Status:** Entschieden (Juli 2026), Umsetzung nicht begonnen
+
+Wechsel von Speech-to-Speech (OpenAI `gpt-realtime`) zu Cascaded (STT → Text → Claude → TTS) beschlossen. Begründung und Kontext: [10_architekturentscheidung-voice-cascaded.md](10_architekturentscheidung-voice-cascaded.md). Planung beginnt am Einstiegspunkt Account-Erstellung. Noch offen: STT-Anbieter, TTS-Anbieter, Turn-Detector-Komponente, Orchestrierungs-Framework, konkrete Datenflüsse, datenschutzrechtliche Neubewertung (B-11 betroffen).
+
+Diese Entscheidung wirkt auf mehrere bestehende Backlog-Punkte ein — siehe Querverweise bei B-09, B-10, B-11, B-15, B-16.
+
+---
+
 ### B-15 — QN-12 Gesprächsrhythmik formal in Qualitätsnormen aufnehmen
 **Priorität:** Hoch
 **Status:** Beschlossen, noch nicht eingetragen
@@ -172,17 +192,15 @@ Das Schweige-Problem ist als Forschungsbefund dokumentiert und als QN-12 angekü
 
 Standard: Jede Voice-Komponente, die für diese Plattform evaluiert wird, muss nachweislich konfigurierbare oder deaktivierbare Turn Detection unterstützen. Die Konfigurierbarkeit muss durch Funktionstest verifiziert werden, nicht durch Herstellerdokumentation allein.
 
+*Bezug zu B-20:* Gilt jetzt für die Wahl der Turn-Detector-Komponente in der Cascaded-Architektur, nicht mehr für OpenAI-spezifische Parameter.
+
 ---
 
 ### B-16 — Voice-Architektur-Dokumentation bereinigen
-**Priorität:** Mittel
-**Status:** Offen
+**Priorität:** Erledigt durch Migration
+**Status:** Durch B-20 überholt
 
-`docs/05_voice-architektur.md` enthält in der Semantic-VAD-Sektion noch:
-- `silence_duration_ms: 1800` als geplante Konfiguration
-- `threshold: 0.8` als geplante Konfiguration
-
-Beide Parameter wurden nie wirksam. Die vollständige Testdokumentation liegt in `docs/08_kapitel-schweige-problem.md`. Die technische Architektur-Dokumentation sollte mit diesem Stand synchronisiert werden.
+`docs/05_voice-architektur.md` enthielt veraltete, nie wirksame Semantic-VAD-Parameter (`silence_duration_ms: 1800`, `threshold: 0.8`). Statt die alte Dokumentation zu synchronisieren, wurde sie im Zuge von B-20 als historisches Dokument markiert (Banner in `05_voice-architektur.md`) — eine Synchronisation ist damit hinfällig, die Zielarchitektur wird stattdessen unter `10_` und folgenden neu dokumentiert.
 
 ---
 
@@ -194,7 +212,7 @@ Das System-Prompt formuliert: "Der Auftrag (A) wurde bereits durch die Benutzero
 
 Vorschlag: Ein einfacher Zwischenscreen vor dem eigentlichen Session-Start. Fragt nach dem Anliegen (1–2 Sätze, formfrei) und holt die informierte Einwilligung ein. Übergibt das Anliegen dann als Kontext an KICO, ohne dass KICO nochmals danach fragt.
 
-Abhängigkeit: Kein Blocker, kann unabhängig umgesetzt werden.
+Abhängigkeit: Kein Blocker, kann unabhängig umgesetzt werden. *Bezug zu B-20:* Die Neuplanung der Cascaded-Architektur beginnt bewusst am Einstiegspunkt Account-Erstellung und arbeitet sich durch den gesamten Flow — dieser Punkt gehört inhaltlich in diese Neuplanung statt isoliert behandelt zu werden.
 
 ---
 
@@ -214,7 +232,7 @@ Umsetzung: Nach Erkennung der Coachingfrage (Pattern im KICO-Output oder explizi
 **Priorität:** Bekannt, bewusst akzeptiert im Forschungsrahmen
 **Status:** Dokumentiert in `docs/05_voice-architektur.md`
 
-Audio-Daten laufen über OpenAI-Infrastruktur ohne garantierte EU-Datenspeicherung. Im Forschungskontext mit informierter Einwilligung akzeptabel. Für eine kommerzielle Weiterentwicklung zwingend zu lösen: OpenAI Enterprise oder Wechsel zu Gemini Live (Vertex AI).
+Audio-Daten laufen über OpenAI-Infrastruktur ohne garantierte EU-Datenspeicherung. Im Forschungskontext mit informierter Einwilligung akzeptabel. Für eine kommerzielle Weiterentwicklung zwingend zu lösen: OpenAI Enterprise oder Wechsel zu Gemini Live (Vertex AI). *Bezug zu B-20:* Mit der Migration zu Cascaded ändern sich die beteiligten Anbieter (STT/TTS statt OpenAI Realtime) grundlegend — diese datenschutzrechtliche Bewertung muss für die neuen Anbieter komplett neu durchgeführt werden, sobald sie feststehen.
 
 ---
 
@@ -243,4 +261,4 @@ Die Recherche für das Schweige-Problem-Kapitel hat drei Quellen identifiziert, 
 
 ---
 
-*Zuletzt aktualisiert: Juni 2026*
+*Zuletzt aktualisiert: Juli 2026*

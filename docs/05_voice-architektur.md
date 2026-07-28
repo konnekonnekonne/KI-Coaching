@@ -2,6 +2,8 @@
 
 *Dokumentationsstand: Juni 2026*
 
+> **Hinweis (Juli 2026): Diese Architektur wird abgelöst.** Im Juli 2026 wurde entschieden, von der hier beschriebenen nativen Speech-to-Speech-Architektur (OpenAI `gpt-realtime`, WebRTC, Ephemeral Key) auf eine Cascaded-Architektur (STT → Text → Claude → TTS) zu wechseln. Begründung und Kontext: [10_architekturentscheidung-voice-cascaded.md](10_architekturentscheidung-voice-cascaded.md). Dieses Dokument bleibt als historische Aufzeichnung der ursprünglichen Implementierung und ihrer Entscheidungslogik erhalten (u. a. wertvoll für die Darstellung des Explorationsprozesses in Kapitel 3 der Abschlussarbeit), beschreibt aber **nicht mehr die Zielarchitektur**. Es wird nicht weiter für den neuen Stand gepflegt — Nachfolgedokumentation entsteht unter `10_` und folgenden.
+
 ---
 
 ## Ausgangsentscheidung: Warum Voice nicht optional ist

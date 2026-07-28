@@ -3,6 +3,8 @@
 
 *Dokumentiert im Rahmen des Plattform-Entwicklungsprozesses, Juni 2026*
 
+> **Update Juli 2026:** Als Konsequenz aus diesem Kapitel wurde entschieden, die Plattform von Speech-to-Speech auf eine Cascaded-Architektur umzustellen — Kontext und Begründung in [10_architekturentscheidung-voice-cascaded.md](10_architekturentscheidung-voice-cascaded.md). Wichtig für die Einordnung: Das dort beschriebene Vorgehen **löst den hier dokumentierten feldweiten Befund nicht auf**, es umgeht ihn für diese Plattform durch eine austauschbare, kontextbewusste Turn-Detection-Komponente statt der Turn-Detection-Blackbox eines einzelnen Anbieters. Der Forschungsbefund dieses Kapitels — dass aktuelle Sprach-KI strukturell auf Gesprächsfluss statt Gesprächsraum optimiert ist — bleibt davon unberührt gültig.
+
 ---
 
 ## Vorbemerkung: Wie dieser Befund entstand

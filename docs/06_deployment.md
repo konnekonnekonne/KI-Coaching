@@ -8,13 +8,15 @@ KICO wird über Netlify als serverlose Next.js-Anwendung betrieben. Jeder Push a
 
 ---
 
+> **Korrektur (Juli 2026):** Die Projekt-Referenz wurde aktualisiert. Das Repository war zuvor auf `ejxiboybvwpeknghlvar.supabase.co` dokumentiert — dieses Projekt wurde im Rahmen einer Supabase-Migration durch `rccugewhmscysohzewfw.supabase.co` abgelöst, ohne dass die Dokumentation nachgezogen wurde (siehe Backlog B-09, der auf genau diese Migration verweist). Die Migrationsdateien in `supabase/migrations/` sind davon inhaltlich nicht betroffen — Schema und RLS-Policies gelten unverändert für das neue Projekt.
+
 ## Infrastruktur
 
 | Dienst | Zweck | URL |
 |--------|-------|-----|
 | GitHub | Quellcode-Verwaltung | github.com/konnekonnekonne/KI-Coaching |
 | Netlify | Hosting, Build, CDN | kicokico.netlify.app (temporär) → kico.pro |
-| Supabase | Datenbank + Auth | ejxiboybvwpeknghlvar.supabase.co |
+| Supabase | Datenbank + Auth | rccugewhmscysohzewfw.supabase.co |
 | Anthropic | KI-Modell API | console.anthropic.com |
 
 ---

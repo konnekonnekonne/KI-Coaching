@@ -1,5 +1,5 @@
 -- KICO Initial Schema
--- Run this in Supabase SQL Editor: https://ejxiboybvwpeknghlvar.supabase.co/project/default/sql
+-- Run this in Supabase SQL Editor: https://rccugewhmscysohzewfw.supabase.co/project/default/sql
 
 -- =====================
 -- PROFILES

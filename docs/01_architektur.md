@@ -2,6 +2,8 @@
 
 ---
 
+> **Hinweis (Juli 2026):** Für den Voice-Modus wurde ein Wechsel von der hier beschriebenen nativen Speech-to-Speech-Architektur (OpenAI `gpt-realtime`, WebRTC) zu einer Cascaded-Architektur (STT → Text → Claude → TTS) beschlossen. Begründung: [10_architekturentscheidung-voice-cascaded.md](10_architekturentscheidung-voice-cascaded.md). Die konkrete Umsetzung (Provider-Wahl, Datenflüsse) ist zum jetzigen Stand noch offen — dieses Dokument beschreibt daher weiterhin den **zuletzt implementierten** Stand für Voice, nicht den beschlossenen Zielzustand. Text-Architektur (Claude, SSE) ist von der Entscheidung unberührt.
+
 ## Überblick
 
 KICO ist eine webbasierte Einzel-Coaching-Plattform, die einen sprachbasierten KI-Agenten in einen methodisch kontrollierten Coaching-Rahmen einbettet. Die Architektur folgt dem in der Abschlussarbeit formulierten Prinzip **„Methode vor Modell"**: Das KI-Modell hat keinen freien Handlungsspielraum, sondern arbeitet innerhalb eines fest definierten Methodenkorpus (INA CCW-Curriculum).
