@@ -26,6 +26,7 @@ Die Dokumentation wächst iterativ mit der Plattform und spiegelt den tatsächli
 | [08_kapitel-schweige-problem.md](08_kapitel-schweige-problem.md) | Gesprächsrhythmik als methodologischer Widerspruch (Voice-KI vs. systemisches Coaching) |
 | [09_anforderungsabgleich.md](09_anforderungsabgleich.md) | Abgleich Anforderungskatalog (Kapitel 2 Abschlussarbeit) vs. Umsetzungsstand — Vorarbeit für Kapitel 3 |
 | [10_architekturentscheidung-voice-cascaded.md](10_architekturentscheidung-voice-cascaded.md) | Entscheidung: Wechsel von Speech-to-Speech zu Cascaded Voice-Architektur — Kontext und Begründung |
+| [11_voice-cascaded-umsetzung.md](11_voice-cascaded-umsetzung.md) | Umsetzung der Cascaded-Architektur: Agenten-Map, technische Stolpersteine, Betriebsdetails, offene Punkte |
 
 ---
 

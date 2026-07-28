@@ -176,11 +176,11 @@ Der Prompt, der aus einem Rohtranskript eine Feldnotiz generiert, ist eine eigen
 
 ### B-20 — Migration zu Cascaded Voice-Architektur
 **Priorität:** Hoch
-**Status:** Entschieden (Juli 2026), Umsetzung nicht begonnen
+**Status:** Kernfunktion deployed und live (28. Juli 2026), Erweiterungen offen
 
-Wechsel von Speech-to-Speech (OpenAI `gpt-realtime`) zu Cascaded (STT → Text → Claude → TTS) beschlossen. Begründung und Kontext: [10_architekturentscheidung-voice-cascaded.md](10_architekturentscheidung-voice-cascaded.md). Planung beginnt am Einstiegspunkt Account-Erstellung. Noch offen: STT-Anbieter, TTS-Anbieter, Turn-Detector-Komponente, Orchestrierungs-Framework, konkrete Datenflüsse, datenschutzrechtliche Neubewertung (B-11 betroffen).
+Wechsel von Speech-to-Speech (OpenAI `gpt-realtime`) zu Cascaded (Deepgram STT/TTS → Claude Sonnet) umgesetzt und auf Pipecat Cloud deployed (Agent `kico`, Region eu-central). Begründung: [10_architekturentscheidung-voice-cascaded.md](10_architekturentscheidung-voice-cascaded.md). Umsetzungsdetails, Stolpersteine und offene Punkte: [11_voice-cascaded-umsetzung.md](11_voice-cascaded-umsetzung.md).
 
-Diese Entscheidung wirkt auf mehrere bestehende Backlog-Punkte ein — siehe Querverweise bei B-09, B-10, B-11, B-15, B-16.
+Noch offen: Parallel-Agents (Sentiment/Konsistenz/QN-Prüfung), Phasentracking-Logik, End-to-End-Test im Browser, Text→Voice-Kontextübergabe.
 
 ---
 
@@ -192,7 +192,7 @@ Das Schweige-Problem ist als Forschungsbefund dokumentiert und als QN-12 angekü
 
 Standard: Jede Voice-Komponente, die für diese Plattform evaluiert wird, muss nachweislich konfigurierbare oder deaktivierbare Turn Detection unterstützen. Die Konfigurierbarkeit muss durch Funktionstest verifiziert werden, nicht durch Herstellerdokumentation allein.
 
-*Bezug zu B-20:* Gilt jetzt für die Wahl der Turn-Detector-Komponente in der Cascaded-Architektur, nicht mehr für OpenAI-spezifische Parameter.
+*Bezug zu B-20:* Umgesetzt — Silero VAD (`stop_secs=2.0` statt Standard 0.2s) in `voice-agent/bot.py`, direkt im installierten Quellcode verifiziert. Siehe [11_voice-cascaded-umsetzung.md](11_voice-cascaded-umsetzung.md). Der von dieser Norm geforderte Funktionstest ("muss durch Funktionstest verifiziert werden") steht noch aus — Task 10 (End-to-End-Test).
 
 ---
 
@@ -232,7 +232,7 @@ Umsetzung: Nach Erkennung der Coachingfrage (Pattern im KICO-Output oder explizi
 **Priorität:** Bekannt, bewusst akzeptiert im Forschungsrahmen
 **Status:** Dokumentiert in `docs/05_voice-architektur.md`
 
-Audio-Daten laufen über OpenAI-Infrastruktur ohne garantierte EU-Datenspeicherung. Im Forschungskontext mit informierter Einwilligung akzeptabel. Für eine kommerzielle Weiterentwicklung zwingend zu lösen: OpenAI Enterprise oder Wechsel zu Gemini Live (Vertex AI). *Bezug zu B-20:* Mit der Migration zu Cascaded ändern sich die beteiligten Anbieter (STT/TTS statt OpenAI Realtime) grundlegend — diese datenschutzrechtliche Bewertung muss für die neuen Anbieter komplett neu durchgeführt werden, sobald sie feststehen.
+Audio-Daten laufen über OpenAI-Infrastruktur ohne garantierte EU-Datenspeicherung. Im Forschungskontext mit informierter Einwilligung akzeptabel. Für eine kommerzielle Weiterentwicklung zwingend zu lösen: OpenAI Enterprise oder Wechsel zu Gemini Live (Vertex AI). *Bezug zu B-20:* Teilweise gelöst — Deepgram (STT/TTS) läuft jetzt über `api.eu.deepgram.com`, Pipecat Cloud in Region eu-central (Frankfurt). Anthropics eigene Datenresidenz für die Voice-Pipeline wurde noch nicht geprüft — verbleibt offen.
 
 ---
 
