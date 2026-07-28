@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { SYSTEM_PROMPT } from '@/lib/system-prompt'
+import { COACHING_MODEL } from '@/lib/models'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
         }))
 
     const stream = await anthropic.messages.stream({
-      model: 'claude-opus-4-5',
+      model: COACHING_MODEL,
       max_tokens: 1024,
       system: SYSTEM_PROMPT,
       messages: claudeMessages,

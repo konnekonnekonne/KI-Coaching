@@ -2,9 +2,10 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Mic, PhoneOff, MessageSquare, Loader2 } from 'lucide-react'
+import { Mic, MicOff, PhoneOff, MessageSquare, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { createClient } from '@/lib/supabase/client'
+import { PipecatClient } from '@pipecat-ai/client-js'
+import { DailyTransport } from '@pipecat-ai/daily-transport'
 
 interface VoiceSessionProps {
   sessionId: string
@@ -20,6 +21,7 @@ interface TranscriptEntry {
 }
 
 // ── Schlüsselsatz-Erkennung ─────────────────────────────────────────────────
+// Unverändert aus der vorherigen Implementierung übernommen.
 
 const KEY_INDICATORS = [
   'eigentlich', 'wirklich', 'immer', 'nie', 'ständig', 'manchmal',
@@ -31,24 +33,6 @@ const KEY_INDICATORS = [
   'gleichzeitig', 'obwohl', 'und trotzdem', 'aber eigentlich',
   'mir ist wichtig', 'was mich', 'was ich',
 ]
-
-// Whisper-Halluzinationen: bei kurzem/stillem Audio generiert Whisper bekannte
-// Standardtexte aus Trainingsdaten — diese werden herausgefiltert
-const WHISPER_HALLUCINATIONS = [
-  'untertitel der amara.org-community',
-  'amara.org community subtitles',
-  'untertitel von',
-  'untertitel: ',
-  'thank you for watching',
-  'thanks for watching',
-  'übersetzt von',
-  '♪',
-]
-
-function isWhisperHallucination(text: string): boolean {
-  const lower = text.toLowerCase().trim()
-  return lower.length < 4 || WHISPER_HALLUCINATIONS.some(h => lower.includes(h))
-}
 
 function extractKeyPhrase(text: string): string | null {
   const sentences = text.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean)
@@ -62,344 +46,159 @@ function extractKeyPhrase(text: string): string | null {
 }
 
 // ── Hauptkomponente ─────────────────────────────────────────────────────────
+// Cascaded-Architektur (Deepgram STT/TTS -> Claude Sonnet, gehostet auf
+// Pipecat Cloud) statt der vorherigen Speech-to-Speech-Anbindung an OpenAI.
+// Kein manuelles Push-to-Talk mehr nötig -- Silero VAD mit grosszuegigem
+// stop_secs (siehe voice-agent/bot.py) uebernimmt die Turn-Detection.
 
 export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionProps) {
   const router = useRouter()
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle')
   const [isKicoSpeaking, setIsKicoSpeaking] = useState(false)
-  const [isMicOpen, setIsMicOpen] = useState(false)
-  const [isTranscribing, setIsTranscribing] = useState(false)
+  const [isMicMuted, setIsMicMuted] = useState(false)
   const [history, setHistory] = useState<TranscriptEntry[]>([])
   const [keyPhrase, setKeyPhrase] = useState<string | null>(null)
   const [keyPhraseVisible, setKeyPhraseVisible] = useState(false)
 
-  const pcRef = useRef<RTCPeerConnection | null>(null)
-  const audioRef = useRef<HTMLAudioElement>(null)
-  const localStreamRef = useRef<MediaStream | null>(null)
-  const dataChannelRef = useRef<RTCDataChannel | null>(null)
-  const historyEndRef = useRef<HTMLDivElement>(null)
+  const clientRef = useRef<PipecatClient | null>(null)
   const historyRef = useRef<TranscriptEntry[]>([])
-  const messageHandlerRef = useRef<((e: MessageEvent) => void) | null>(null)
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const audioChunksRef = useRef<Blob[]>([])
-
-  const supabase = createClient()
-  const userIdRef = useRef<string | null>(null)
-  const processedItemIds = useRef<Set<string>>(new Set())
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      userIdRef.current = data.user?.id ?? null
-    })
-  }, [supabase])
+  const historyEndRef = useRef<HTMLDivElement>(null)
+  const botTextRef = useRef<string>('')
 
   useEffect(() => {
     historyEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [history, isTranscribing])
+  }, [history])
 
-  // ── DataChannel Handler ─────────────────────────────────────────────────
-
-  const handleDataChannelMessage = useCallback(async (e: MessageEvent) => {
-    try {
-      const event = JSON.parse(e.data)
-
-      if (event.type === 'response.output_audio.delta' ||
-          event.type === 'response.audio.delta') {
-        setIsKicoSpeaking(true)
-      }
-      if (event.type === 'response.output_audio.done' ||
-          event.type === 'response.audio.done') {
-        setIsKicoSpeaking(false)
-      }
-
-      // KICO-Transkript
-      if (
-        event.type === 'response.output_audio_transcript.done' ||
-        event.type === 'response.audio_transcript.done'
-      ) {
-        const text: string = event.transcript ?? ''
-        const itemId: string = event.item_id ?? ''
-        if (text.trim() && (!itemId || !processedItemIds.current.has(itemId))) {
-          if (itemId) processedItemIds.current.add(itemId)
-          setHistory(h => {
-            const next = [...h, { role: 'kico' as const, text: text.trim() }]
-            historyRef.current = next
-            return next
-          })
-          setKeyPhraseVisible(false)
-          const { error } = await supabase.from('messages').insert({
-            session_id: sessionId,
-            user_id: userIdRef.current,
-            role: 'assistant',
-            content: text.trim(),
-          })
-          if (error) console.error('[Voice DB] KICO insert error:', error.message)
-        }
-      }
-
-    } catch (err) {
-      console.error('[Voice DC] Parse error:', err)
-    }
-  }, [sessionId, supabase])
-
-  useEffect(() => {
-    messageHandlerRef.current = handleDataChannelMessage
-  }, [handleDataChannelMessage])
+  const pushHistory = useCallback((entry: TranscriptEntry) => {
+    setHistory(h => {
+      const next = [...h, entry]
+      historyRef.current = next
+      return next
+    })
+  }, [])
 
   // ── Verbindung aufbauen ─────────────────────────────────────────────────
 
   const connect = useCallback(async () => {
     setConnectionState('connecting')
     try {
-      const tokenRes = await fetch('/api/voice/session', { method: 'POST' })
-      if (!tokenRes.ok) throw new Error(`Token fetch failed: ${tokenRes.status}`)
-      const { ephemeral_key } = await tokenRes.json()
+      const client = new PipecatClient({
+        transport: new DailyTransport(),
+        enableMic: true,
+        enableCam: false,
+        callbacks: {
+          onBotReady: () => setConnectionState('connected'),
+          onDisconnected: () => setConnectionState('idle'),
+          onError: (message) => {
+            console.error('[Voice] Pipecat error:', message)
+            setConnectionState('error')
+          },
+          onBotTtsStarted: () => setIsKicoSpeaking(true),
+          onBotTtsStopped: () => setIsKicoSpeaking(false),
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          // Coachee-Transkript: nur finale Segmente uebernehmen
+          onUserTranscript: (data) => {
+            if (!data.final || !data.text.trim()) return
+            const trimmed = data.text.trim()
+            pushHistory({ role: 'user', text: trimmed })
+            const phrase = extractKeyPhrase(trimmed)
+            if (phrase) { setKeyPhrase(phrase); setKeyPhraseVisible(true) }
+          },
+
+          // KICOs Antwort: Text kommt gestreamt (Delta-Chunks), hier
+          // akkumulieren und erst am Ende der Generierung als eine
+          // Transkript-Zeile uebernehmen.
+          onBotLlmStarted: () => {
+            botTextRef.current = ''
+            setKeyPhraseVisible(false)
+          },
+          onBotLlmText: (data) => {
+            botTextRef.current += data.text
+          },
+          onBotLlmStopped: () => {
+            const text = botTextRef.current.trim()
+            if (text) pushHistory({ role: 'kico', text })
+            botTextRef.current = ''
+          },
+        },
       })
-      stream.getAudioTracks().forEach(t => { t.enabled = false })
-      localStreamRef.current = stream
+      clientRef.current = client
 
-      const pc = new RTCPeerConnection()
-      pcRef.current = pc
-
-      let audioSet = false
-      pc.ontrack = (e) => {
-        if (!audioSet && audioRef.current) {
-          audioRef.current.srcObject = e.streams[0]
-          audioRef.current.play().catch(console.error)
-          audioSet = true
-        }
-      }
-
-      stream.getTracks().forEach(track => pc.addTrack(track, stream))
-
-      const dc = pc.createDataChannel('oai-events')
-      dataChannelRef.current = dc
-      dc.onmessage = (e) => messageHandlerRef.current?.(e)
-
-      dc.onopen = () => {
-        // turn_detection ist auf gpt-realtime-2 via WebRTC nicht konfigurierbar.
-        // Empirisch getestet (Juni 2026):
-        //   client_secrets + turn_detection → 400 Bad Request
-        //   session.update + type:'none'    → silently ignored (kein Effekt)
-        //   session.update + semantic_vad   → unknown_parameter error
-        // Das Feld existiert auf diesem Modell/Endpunkt nicht.
-        // Dokumentiert als Forschungsbefund in docs/08_kapitel-schweige-problem.md
-
-        if (priorMessages && priorMessages.length > 0) {
-          for (const msg of priorMessages.slice(-20)) {
-            dc.send(JSON.stringify({
-              type: 'conversation.item.create',
-              item: {
-                type: 'message',
-                role: msg.role,
-                content: [{ type: msg.role === 'assistant' ? 'text' : 'input_text', text: msg.content }],
-              },
-            }))
-          }
-          dc.send(JSON.stringify({
-            type: 'conversation.item.create',
-            item: {
-              type: 'message',
-              role: 'user',
-              content: [{ type: 'input_text', text: 'Wir wechseln jetzt von Schrift zu Sprache. Bitte führe das Gespräch nahtlos fort.' }],
-            },
-          }))
-        } else {
-          dc.send(JSON.stringify({
-            type: 'conversation.item.create',
-            item: {
-              type: 'message',
-              role: 'user',
-              content: [{ type: 'input_text', text: 'Bitte eröffne das Gespräch.' }],
-            },
-          }))
-        }
-        dc.send(JSON.stringify({ type: 'response.create' }))
-      }
-
-      const offer = await pc.createOffer()
-      await pc.setLocalDescription(offer)
-
-      const sdpRes = await fetch('https://api.openai.com/v1/realtime/calls', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${ephemeral_key}`, 'Content-Type': 'application/sdp' },
-        body: offer.sdp,
+      await client.startBotAndConnect({
+        endpoint: '/api/voice/start',
+        // TODO(Task 6/7): priorMessages wird bislang nur durchgereicht, aber
+        // von bot.py noch nicht in den LLMContext vorgeladen -- ein
+        // Text→Voice-Wechsel startet den Voice-Kontext aktuell "kalt".
+        requestData: { sessionId, priorMessages: priorMessages ?? [] },
       })
-      if (!sdpRes.ok) throw new Error('SDP exchange failed')
-
-      await pc.setRemoteDescription({ type: 'answer', sdp: await sdpRes.text() })
-      setConnectionState('connected')
-
     } catch (err) {
-      console.error('Voice connect error:', err)
+      console.error('[Voice] Connect error:', err)
       setConnectionState('error')
-      cleanup()
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- priorMessages ist ein Snapshot beim Verbindungsaufbau, nicht reaktiv
+  }, [sessionId, pushHistory])
 
-  // ── Mic Toggle — manuelles PTT ──────────────────────────────────────────
-  // Kein VAD: Coachee öffnet Mic, spricht in Ruhe, schließt Mic wenn fertig.
-  // Erst dann wird Audio committed und KICO antwortet.
-
-  const handleRecordButton = useCallback(() => {
-    if (connectionState !== 'connected') return
-
-    if (!isMicOpen) {
-      // KICO ggf. unterbrechen
-      if (isKicoSpeaking) {
-        dataChannelRef.current?.send(JSON.stringify({ type: 'response.cancel' }))
-        setIsKicoSpeaking(false)
-      }
-      // Mic öffnen + MediaRecorder starten
-      localStreamRef.current?.getAudioTracks().forEach(t => { t.enabled = true })
-      const stream = localStreamRef.current
-      if (stream) {
-        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-          ? 'audio/webm;codecs=opus'
-          : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : ''
-        const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
-        audioChunksRef.current = []
-        recorder.ondataavailable = (ev) => {
-          if (ev.data.size > 0) audioChunksRef.current.push(ev.data)
-        }
-        recorder.start()
-        mediaRecorderRef.current = recorder
-      }
-      setIsMicOpen(true)
-
-    } else {
-      // Mic schließen
-      localStreamRef.current?.getAudioTracks().forEach(t => { t.enabled = false })
-      setIsMicOpen(false)
-
-      // Audio an KICO übergeben
-      const dc = dataChannelRef.current
-      if (dc?.readyState === 'open') {
-        dc.send(JSON.stringify({ type: 'input_audio_buffer.commit' }))
-        dc.send(JSON.stringify({ type: 'response.create' }))
-      }
-
-      // Whisper-Transkription parallel starten
-      const recorder = mediaRecorderRef.current
-      if (recorder && recorder.state !== 'inactive') {
-        recorder.stop()
-        recorder.onstop = async () => {
-          mediaRecorderRef.current = null
-          const chunks = audioChunksRef.current
-          audioChunksRef.current = []
-          const blob = new Blob(chunks, { type: chunks[0]?.type ?? 'audio/webm' })
-          if (blob.size < 1000) return
-
-          setIsTranscribing(true)
-          try {
-            const fd = new FormData()
-            fd.append('audio', blob, 'audio.webm')
-            const res = await fetch('/api/transcribe', { method: 'POST', body: fd })
-            if (res.ok) {
-              const { text } = await res.json()
-              const trimmed = (text ?? '').trim()
-              if (trimmed && !isWhisperHallucination(trimmed)) {
-                setHistory(h => {
-                  const next = [...h, { role: 'user' as const, text: trimmed }]
-                  historyRef.current = next
-                  return next
-                })
-                const phrase = extractKeyPhrase(trimmed)
-                if (phrase) { setKeyPhrase(phrase); setKeyPhraseVisible(true) }
-                await supabase.from('messages').insert({
-                  session_id: sessionId,
-                  user_id: userIdRef.current,
-                  role: 'user',
-                  content: trimmed,
-                })
-              }
-            }
-          } catch (err) {
-            console.error('[Voice Whisper] Fetch error:', err)
-          } finally {
-            setIsTranscribing(false)
-          }
-        }
-      }
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Verbindungsaufbau zu externem System (Pipecat), kein reiner State-Sync
+    connect()
+    return () => {
+      clientRef.current?.disconnect()
     }
-  }, [connectionState, isMicOpen, isKicoSpeaking, sessionId, supabase])
-
-  // ── Cleanup & Ende ──────────────────────────────────────────────────────
-
-  const cleanup = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop()
-    }
-    mediaRecorderRef.current = null
-    audioChunksRef.current = []
-    localStreamRef.current?.getTracks().forEach(t => t.stop())
-    pcRef.current?.close()
-    pcRef.current = null
-    localStreamRef.current = null
-    dataChannelRef.current = null
-    setIsKicoSpeaking(false)
-    setIsMicOpen(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // ── Mute-Toggle ──────────────────────────────────────────────────────────
+
+  const toggleMute = useCallback(() => {
+    const client = clientRef.current
+    if (!client) return
+    const next = !isMicMuted
+    client.enableMic(!next)
+    setIsMicMuted(next)
+  }, [isMicMuted])
+
+  // ── Ende ─────────────────────────────────────────────────────────────────
 
   const handleSwitchToText = useCallback(() => {
     const snapshot = historyRef.current
-    cleanup()
+    clientRef.current?.disconnect()
     onEnd(snapshot)
-  }, [cleanup, onEnd])
+  }, [onEnd])
 
   const handleEndSession = useCallback(() => {
-    cleanup()
+    clientRef.current?.disconnect()
     router.push('/session')
-  }, [cleanup, router])
-
-  useEffect(() => {
-    connect()
-    return cleanup
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [router])
 
   // ── Status-Text ─────────────────────────────────────────────────────────
 
   const statusText =
     connectionState === 'connecting' ? 'Verbinde…' :
     connectionState === 'error'      ? 'Verbindungsfehler — bitte neu laden' :
-    isMicOpen                        ? 'KICO hört zu. Nimm dir Zeit zu sprechen.' :
-    isKicoSpeaking                   ? 'KICO spricht. Aktiviere das Mikrofon, um zu sprechen.' :
-                                       'Aktiviere das Mikrofon, um zu sprechen.'
+    isMicMuted                       ? 'Mikrofon stummgeschaltet' :
+    isKicoSpeaking                   ? 'KICO spricht.' :
+                                       'KICO hört zu. Nimm dir Zeit.'
 
-  const canRecord = connectionState === 'connected'
+  const canInteract = connectionState === 'connected'
 
   return (
     <div className="flex flex-col md:flex-row h-full">
-      <audio ref={audioRef} autoPlay playsInline className="hidden" />
-
       {/* ── Haupt-Spalte ──────────────────────────────────────────────── */}
       <div className="flex flex-col items-center md:flex-1 pt-12 pb-8 px-8 gap-8 md:justify-between">
 
-        {/* Status + Aufnahme-Button */}
         <div className="flex flex-col items-center gap-6">
           <p className="caption text-muted/40">{statusText}</p>
 
-          <button
-            onClick={handleRecordButton}
-            disabled={!canRecord}
-            aria-label={isMicOpen ? 'Mic schließen' : 'Mic öffnen'}
+          <div
             className={cn(
               'relative w-32 h-32 rounded-full flex items-center justify-center',
-              'transition-all duration-300 cursor-pointer',
-              'disabled:opacity-30 disabled:cursor-not-allowed',
-              !isMicOpen && canRecord && [
-                'border-2 border-border bg-surface/40',
-                'hover:border-primary/50 hover:bg-primary/5 hover:scale-105',
-                'active:scale-95',
-              ],
-              isMicOpen && 'border-2 border-primary bg-primary/20 scale-105',
-              (!canRecord && !isMicOpen) && 'border-2 border-border bg-surface/30',
+              'transition-all duration-300 border-2',
+              isKicoSpeaking && 'border-primary bg-primary/10 scale-105',
+              !isKicoSpeaking && canInteract && 'border-border bg-surface/40',
+              !canInteract && 'border-border bg-surface/30',
             )}
           >
-            {isKicoSpeaking && !isMicOpen && (
+            {isKicoSpeaking && (
               <span className="absolute inset-0 rounded-full animate-ping bg-primary/10" />
             )}
             {connectionState === 'connecting' && (
@@ -408,9 +207,23 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
             {connectionState === 'connected' && (
               <Mic size={28} className={cn(
                 'transition-colors duration-300',
-                isMicOpen ? 'text-primary' : 'text-muted/40'
+                isMicMuted ? 'text-muted/30' : 'text-primary'
               )} />
             )}
+          </div>
+
+          <button
+            onClick={toggleMute}
+            disabled={!canInteract}
+            aria-label={isMicMuted ? 'Mikrofon aktivieren' : 'Mikrofon stummschalten'}
+            className={cn(
+              'flex items-center gap-1.5 caption transition-colors cursor-pointer',
+              'disabled:opacity-30 disabled:cursor-not-allowed',
+              isMicMuted ? 'text-signal-amber' : 'text-muted/50 hover:text-primary',
+            )}
+          >
+            {isMicMuted ? <MicOff size={13} /> : <Mic size={13} />}
+            {isMicMuted ? 'Stummgeschaltet' : 'Mikrofon aktiv'}
           </button>
         </div>
 
@@ -421,7 +234,7 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
         )}>
           {keyPhrase && (
             <blockquote className="heading-2 text-kico-text/70 italic leading-snug">
-              „{keyPhrase}"
+              „{keyPhrase}&rdquo;
             </blockquote>
           )}
         </div>
@@ -456,7 +269,7 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
           'overflow-y-auto chat-scroll',
           'px-5 py-5 flex flex-col gap-0.5',
         )}>
-          {history.length === 0 && !isTranscribing && (
+          {history.length === 0 && (
             <p className="caption text-muted/35 italic">Deine Worte erscheinen hier…</p>
           )}
           {history.map((entry, i) => (
@@ -469,9 +282,6 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
               {entry.text}
             </p>
           ))}
-          {isTranscribing && (
-            <p className="caption text-muted/30 py-1 animate-pulse">…</p>
-          )}
           <div ref={historyEndRef} />
         </div>
       )}

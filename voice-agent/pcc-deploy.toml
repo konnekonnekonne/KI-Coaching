@@ -1,0 +1,7 @@
+agent_name = "kico"
+secret_set = "kico"
+agent_profile = "agent-1x"
+
+[scaling]
+	min_agents = 0
+	max_agents = 5

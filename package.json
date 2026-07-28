@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.100.1",
+    "@pipecat-ai/client-js": "^1.13.0",
+    "@pipecat-ai/daily-transport": "^1.6.8",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.2",
     "ai": "^6.0.193",
