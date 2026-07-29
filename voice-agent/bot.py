@@ -19,6 +19,7 @@ Erforderliche Secrets (liegen im Pipecat-Cloud Secret-Set "kico"):
 Run: uv run bot.py
 """
 
+import asyncio
 import os
 
 from dotenv import load_dotenv
@@ -77,14 +78,25 @@ class TranscriptWriter(FrameProcessor):
 
     Fuer role="user" zusaetzlich deterministischer Krisen-Pre-Filter (B-05b,
     docs/backlog.md): bei "akut" wird der Frame NICHT weitergereicht (das LLM
-    bekommt diesen Turn nie zu sehen), stattdessen wird der Krisentext direkt
-    per TTSSpeakFrame gesprochen -- unabhaengig vom Modellverhalten."""
+    bekommt diesen Turn nie zu sehen). Die Reaktion selbst wird NICHT sofort
+    gesprochen -- ein Nutzertest zeigte, dass sofortiges Antworten sich wie
+    Dazwischenreden anfuehlt, wenn der Coachee nach einer normalen VAD-Pause
+    (2s) eigentlich noch weitersprechen wollte. Stattdessen wartet
+    CRISIS_GRACE_SECS zusaetzlich; jede weitere Aeusserung waehrend dieser
+    Wartezeit wird angehaengt und die Wartezeit neu gestartet, statt zu
+    unterbrechen. Der Trigger selbst bleibt hart: einmal erkannt, wird immer
+    reagiert, auch wenn der Coachee danach abwiegelt (bewusst so, siehe
+    docs/backlog.md B-05b -- ein "ist schon okay" direkt nach einer
+    Krisenaeusserung ist selbst ein bekanntes Risikomuster)."""
+
+    CRISIS_GRACE_SECS = 4.0
 
     def __init__(self, session_id: str, user_id: str, role: str):
         super().__init__()
         self.session_id = session_id
         self.user_id = user_id
         self.role = role
+        self._pending_crisis_timer: asyncio.Task | None = None
 
     async def process_frame(self, frame: Frame, direction: FrameDirection):
         await super().process_frame(frame, direction)
@@ -96,17 +108,29 @@ class TranscriptWriter(FrameProcessor):
                     self.session_id, self.user_id, self.role, frame.text,
                     risk_level=signal.level, risk_terms=signal.matched_terms,
                 )
-                if signal.level == "akut":
-                    write_message(self.session_id, self.user_id, "assistant", CRISIS_RESPONSE_TEXT)
-                    await self.push_frame(
-                        TTSSpeakFrame(text=CRISIS_RESPONSE_TEXT, append_to_context=False),
-                        direction,
+                if signal.level == "akut" or self._pending_crisis_timer is not None:
+                    if self._pending_crisis_timer is not None:
+                        self._pending_crisis_timer.cancel()
+                    self._pending_crisis_timer = asyncio.create_task(
+                        self._deliver_crisis_response(direction)
                     )
                     return  # Original-Frame nicht weiterreichen -- kein LLM-Call fuer diesen Turn
             else:
                 write_message(self.session_id, self.user_id, self.role, frame.text)
 
         await self.push_frame(frame, direction)
+
+    async def _deliver_crisis_response(self, direction: FrameDirection) -> None:
+        try:
+            await asyncio.sleep(self.CRISIS_GRACE_SECS)
+        except asyncio.CancelledError:
+            return  # Coachee hat weitergesprochen -- neuer Timer laeuft bereits
+        self._pending_crisis_timer = None
+        write_message(self.session_id, self.user_id, "assistant", CRISIS_RESPONSE_TEXT)
+        await self.push_frame(
+            TTSSpeakFrame(text=CRISIS_RESPONSE_TEXT, append_to_context=False),
+            direction,
+        )
 
 
 # Session-Umgebung (B-23, docs/backlog.md): set_anchor-Tool, identisch zu
