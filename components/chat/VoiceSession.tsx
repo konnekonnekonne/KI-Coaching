@@ -64,6 +64,7 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
   const historyRef = useRef<TranscriptEntry[]>([])
   const historyEndRef = useRef<HTMLDivElement>(null)
   const botTextRef = useRef<string>('')
+  const audioRef = useRef<HTMLAudioElement>(null)
 
   useEffect(() => {
     historyEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -95,6 +96,15 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
           },
           onBotTtsStarted: () => setIsKicoSpeaking(true),
           onBotTtsStopped: () => setIsKicoSpeaking(false),
+
+          // Daily/Pipecat erzeugt kein eigenes <audio>-Element -- das vom Bot
+          // ankommende Audio-Track muss selbst an ein Element angehaengt werden,
+          // sonst laeuft die gesamte Pipeline fehlerfrei, ohne dass man etwas hoert.
+          onTrackStarted: (track, participant) => {
+            if (track.kind === 'audio' && participant && !participant.local && audioRef.current) {
+              audioRef.current.srcObject = new MediaStream([track])
+            }
+          },
 
           // Coachee-Transkript: nur finale Segmente uebernehmen
           onUserTranscript: (data) => {
@@ -183,6 +193,8 @@ export function VoiceSession({ sessionId, priorMessages, onEnd }: VoiceSessionPr
 
   return (
     <div className="flex flex-col md:flex-row h-full">
+      <audio ref={audioRef} autoPlay playsInline className="hidden" />
+
       {/* ── Haupt-Spalte ──────────────────────────────────────────────── */}
       <div className="flex flex-col items-center md:flex-1 pt-12 pb-8 px-8 gap-8 md:justify-between">
 
