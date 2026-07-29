@@ -36,7 +36,6 @@ from pipecat.processors.aggregators.llm_response_universal import (
 from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
 from pipecat.runner.types import RunnerArguments
 from pipecat.runner.utils import create_transport
-from pipecat.services.anthropic.llm import AnthropicLLMService
 from pipecat.services.deepgram.stt import DeepgramSTTService
 from pipecat.services.deepgram.tts import DeepgramTTSService
 from pipecat.transports.base_transport import BaseTransport
@@ -47,6 +46,7 @@ from pipecat.workers.runner import WorkerRunner
 from system_prompt import SYSTEM_PROMPT
 from models import COACHING_MODEL, VOICE_WEIBLICH, VOICE_MAENNLICH
 from supabase_client import write_message
+from anthropic_fix import SafeAnthropicLLMService
 
 load_dotenv(override=True)
 
@@ -119,9 +119,9 @@ async def run_bot(transport: BaseTransport, runner_args: RunnerArguments) -> Non
         ),
     )
 
-    llm = AnthropicLLMService(
+    llm = SafeAnthropicLLMService(
         api_key=os.getenv("ANTHROPIC_API_KEY"),
-        settings=AnthropicLLMService.Settings(
+        settings=SafeAnthropicLLMService.Settings(
             model=COACHING_MODEL,
             system_instruction=SYSTEM_PROMPT,
         ),
