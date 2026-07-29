@@ -4,6 +4,21 @@
 
 ---
 
+## MVP — Priorisierte Reihenfolge (Stand 29. Juli 2026)
+
+*Produktmanagement-Perspektive statt reiner Aufgabenliste: Was ist die kleinste Plattform, die (a) mit echten Pilot-Teilnehmenden ethisch vertretbar ist, (b) tatsächlich zeigt, was die Arbeit behauptet ("Methode vor Modell", nicht generischer Chatbot mit Coaching-Anstrich), und (c) eine vollständige, auswertbare Coaching-Session liefert? Alles andere folgt nach dem MVP, siehe die jeweiligen Einzeleinträge unten.*
+
+1. **B-05b** — Deterministischer Krisen-Pre-Filter. Ethische Untergrenze für echte Teilnehmende, unabhängig von allem anderen umsetzbar (kann parallel zu #2 laufen).
+2. **B-23** — Session-Umgebung: persistente Anker + punktueller strukturierter Input. Voraussetzung dafür, dass #3 und #4 tatsächlich gut werden — deshalb vor beiden eingeordnet, nicht danach.
+3. **B-01 + B-02** — Werkzeugbeschreibungen + Tool-Auswahllogik. Größter Einzelposten, aber die methodische Kernthese der gesamten Arbeit — ohne das ist "Methode vor Modell" eine Behauptung ohne Substanz.
+4. **B-17** — Auftrag/Consent-Screen. Der Systemprompt behauptet aktuell wörtlich, das sei schon eingeholt — ist es nicht. Baut auf #2 auf (Checkbox-Bestätigung, persistente Anzeige).
+5. **B-04 + B-07** — Sessionabschluss + Beenden-Button. Ohne definiertes Ende ist eine Session methodisch keine vollständige, auswertbare Einheit.
+6. **Stimmwahl-UI im Dashboard** — Backend/DB steht (siehe B-20), Oberfläche zur tatsächlichen Auswahl fehlt noch.
+
+**Bewusst zurückgestellt (Post-MVP):** B-12/B-13 (Memory-Architektur — eine einzelne Session ist auch ohne Cross-Session-Gedächtnis vollständig auswertbar), Task 6/7 (Parallel-Agents, Phasentracking — Qualitätssicherung obendrauf, keine Voraussetzung für einen ersten Pilotdurchlauf), B-03/B-05 (emotionale Momente, Widerstand — methodische Politur, kein Blocker), B-08 (Protokollansicht), B-06 (leere Sessions — Aufräumen), B-11 (Anthropic-Datenresidenz bleibt dokumentierte Forschungs-Limitation, wie bei Deepgram/OpenAI bereits entschieden).
+
+---
+
 ## Systemprompt
 
 ### B-01 — Werkzeugbeschreibungen fehlen
@@ -16,6 +31,8 @@ Die ~20 INA CCW-Tools sind im Prompt namentlich aufgeführt, aber nicht beschrie
 - Abschlussindikator (woran merke ich, dass das Tool abgeschlossen ist?)
 
 Ohne diese Beschreibungen fällt das Modell auf generisches Coaching-Verhalten zurück, statt methodisch zu arbeiten.
+
+*Bezug zu B-23:* Mehrere Tools (Inneres Team, Perspektivenrad, Bodenanker-artige Techniken) brauchen strukturierte, persistent sichtbare Artefakte, nicht nur Fließtext. Ohne die Session-Umgebung aus B-23 lässt sich die inhaltliche Beschreibung dieser Tools nicht vollständig in echtes Verhalten übersetzen.
 
 **Aufwand:** Hoch — erfordert inhaltliche Durcharbeitung jedes einzelnen Tools.
 
@@ -95,6 +112,52 @@ Ergänzung: Der Server verfolgt die aktuelle Phase als expliziten State (`sessio
 Längerfristig ermöglicht das: Phasenübergänge erfordern explizite Bestätigung, Mindestanforderungen pro Phase werden serverseitig erzwungen.
 
 **Aufwand:** Mittel — neues DB-Feld, State-Update-Logik, Injection in API-Route.
+
+---
+
+## Session-Umgebung (Text + Voice)
+
+*Bislang zwei getrennte UI-Pfade (ChatWindow, VoiceSession). Diese drei Punkte gehören zusammen, weil sie alle dieselbe zugrundeliegende Lücke beschreiben: ein System für persistente Anker und punktuellen strukturierten Input, das unabhängig vom Gesprächsmodus funktioniert.*
+
+### B-23 — Session-Umgebung: Persistente Anker + punktueller strukturierter Input
+**Priorität:** Hoch (MVP-Voraussetzung für B-01/B-02, B-17)
+**Status:** Offen — konzeptionell benannt (29. Juli 2026), noch nicht designt
+
+Text und Voice sind aktuell zwei komplett getrennte UI-Pfade. Die Realität des Coachings braucht aber unabhängig vom Gesprächsmodus:
+- **Persistente Anker:** Elemente, die während der gesamten Session sichtbar bleiben müssen — die Coachingfrage (B-18), Skalierungswerte, Ergebnisse aus Tools mit räumlicher/struktureller Komponente (z. B. Bodenanker im Inneren Team oder Perspektivenrad).
+- **Punktueller strukturierter Input:** Manche Momente brauchen mehr als freien Text-/Sprachfluss — z. B. eine explizite Checkbox-Bestätigung des Auftrags (B-17), nachdem der Bot danach gefragt hat, oder ein bewusst festgelegter Skalierungswert statt einer beiläufig erwähnten Zahl.
+
+Zwei denkbare Mechanismen, noch nicht entschieden:
+1. Punktuelle strukturierte Eingabe-Elemente (Checkbox, Slider, Kurztext), die auch mitten in einer Voice-Session erscheinen können, ohne den Sprachfluss zu brechen.
+2. KICO erfasst den Wert im natürlichen Gespräch (Text oder Sprache), ein Extraktionsschritt liest ihn strukturiert heraus, die Oberfläche zeigt ihn danach als bestätigten Anker an.
+
+Ohne dieses System bleiben B-01 (viele INA-CCW-Tools brauchen genau solche Artefakte) und B-17 (Auftrag-Bestätigung) nur unvollständig umsetzbar — deshalb vor bzw. parallel zu beiden eingeordnet, nicht danach.
+
+**Aufwand:** Hoch — echte Session-UI-Architektur-Frage, betrifft ChatWindow und VoiceSession gleichermaßen. Welcher Mechanismus (oder welche Kombination) zum Einsatz kommt, ist eine offene Design-Entscheidung, bewusst nicht in diesem Eintrag vorweggenommen.
+
+---
+
+### B-17 — Auftrag-UI-Screen (A in AZF)
+**Priorität:** Mittel (MVP)
+**Status:** Konzipiert, nicht gebaut
+
+Das System-Prompt formuliert: "Der Auftrag (A) wurde bereits durch die Benutzeroberfläche eingeholt." Diese UI existiert noch nicht. Derzeit startet KICO direkt mit der Ziel-Frage, ohne dass der Coachee bewusst zugestimmt hat.
+
+Vorschlag: Ein einfacher Zwischenscreen vor dem eigentlichen Session-Start. Fragt nach dem Anliegen (1–2 Sätze, formfrei) und holt die informierte Einwilligung ein. Übergibt das Anliegen dann als Kontext an KICO, ohne dass KICO nochmals danach fragt.
+
+*Bezug zu B-23:* Die vorgeschlagene explizite Checkbox-Bestätigung (statt nur eines Freitextfelds) und die Frage, ob/wie der Auftrag danach persistent sichtbar bleibt, sind Spezialfälle des allgemeineren Anker-/Input-Systems aus B-23 — beide Punkte sollten zusammen entworfen werden, nicht getrennt.
+
+---
+
+### B-18 — Coaching-Frage als persistenter Anker
+**Priorität:** Mittel (MVP, Teilmenge von B-23)
+**Status:** Konzipiert, nicht gebaut
+
+Der System-Prompt beschreibt die Coaching-Frage als "roten Faden", den KICO wörtlich zurückspiegelt und durch die Session trägt. Methodisch wäre es stärker, wenn die Frage auch visuell präsent bleibt: einmalig vom Coachee formuliert, dann fixiert sichtbar — im Text- **und** im Voice-Modus, nicht nur "am oberen Rand des Chat-Fensters".
+
+Umsetzung: Nach Erkennung der Coachingfrage (Pattern im KICO-Output oder explizites DB-Feld) wird sie aus dem Gesprächsverlauf extrahiert und als `sessions.coaching_question` gespeichert. Die Session-UI zeigt sie fixiert an — unabhängig vom Modus.
+
+*Bezug zu B-23:* Dies ist der am konkretesten ausgearbeitete Einzelfall des allgemeinen Anker-Systems — beim Design von B-23 als erstes Referenzbeispiel nutzen.
 
 ---
 
@@ -192,7 +255,7 @@ Der Prompt, der aus einem Rohtranskript eine Feldnotiz generiert, ist eine eigen
 
 Wechsel von Speech-to-Speech (OpenAI `gpt-realtime`) zu Cascaded (Deepgram STT/TTS → Claude Sonnet) umgesetzt und auf Pipecat Cloud deployed (Agent `kico`, Region eu-central). Begründung: [10_architekturentscheidung-voice-cascaded.md](10_architekturentscheidung-voice-cascaded.md). Umsetzungsdetails, Stolpersteine und offene Punkte: [11_voice-cascaded-umsetzung.md](11_voice-cascaded-umsetzung.md).
 
-Noch offen: Parallel-Agents (Sentiment/Konsistenz/QN-Prüfung), Phasentracking-Logik, End-to-End-Test im Browser, Text→Voice-Kontextübergabe.
+End-to-End-Test im Browser: bestanden (29. Juli 2026, siehe B-15). Noch offen: Parallel-Agents (Sentiment/Konsistenz/QN-Prüfung, Post-MVP), Phasentracking-Logik (Post-MVP), Text→Voice-Kontextübergabe, Stimmwahl-UI im Dashboard (MVP, siehe oben).
 
 ---
 
@@ -213,28 +276,6 @@ Standard: Jede Voice-Komponente, die für diese Plattform evaluiert wird, muss n
 **Status:** Durch B-20 überholt
 
 `docs/05_voice-architektur.md` enthielt veraltete, nie wirksame Semantic-VAD-Parameter (`silence_duration_ms: 1800`, `threshold: 0.8`). Statt die alte Dokumentation zu synchronisieren, wurde sie im Zuge von B-20 als historisches Dokument markiert (Banner in `05_voice-architektur.md`) — eine Synchronisation ist damit hinfällig, die Zielarchitektur wird stattdessen unter `10_` und folgenden neu dokumentiert.
-
----
-
-### B-17 — Auftrag-UI-Screen (A in AZF)
-**Priorität:** Mittel
-**Status:** Konzipiert, nicht gebaut
-
-Das System-Prompt formuliert: "Der Auftrag (A) wurde bereits durch die Benutzeroberfläche eingeholt." Diese UI existiert noch nicht. Derzeit startet KICO direkt mit der Ziel-Frage, ohne dass der Coachee bewusst zugestimmt hat.
-
-Vorschlag: Ein einfacher Zwischenscreen vor dem eigentlichen Session-Start. Fragt nach dem Anliegen (1–2 Sätze, formfrei) und holt die informierte Einwilligung ein. Übergibt das Anliegen dann als Kontext an KICO, ohne dass KICO nochmals danach fragt.
-
-Abhängigkeit: Kein Blocker, kann unabhängig umgesetzt werden. *Bezug zu B-20:* Die Neuplanung der Cascaded-Architektur beginnt bewusst am Einstiegspunkt Account-Erstellung und arbeitet sich durch den gesamten Flow — dieser Punkt gehört inhaltlich in diese Neuplanung statt isoliert behandelt zu werden.
-
----
-
-### B-18 — Coaching-Frage als persistenter Anker
-**Priorität:** Mittel
-**Status:** Konzipiert, nicht gebaut
-
-Der System-Prompt beschreibt die Coaching-Frage als "roten Faden", den KICO wörtlich zurückspiegelt und durch die Session trägt. Methodisch wäre es stärker, wenn die Frage auch visuell präsent bleibt: einmalig vom Coachee formuliert, dann fixiert am oberen Rand des Chat-Fensters sichtbar.
-
-Umsetzung: Nach Erkennung der Coachingfrage (Pattern im KICO-Output oder explizites DB-Feld) wird sie aus dem Chat-Verlauf extrahiert und als `sessions.coaching_question` gespeichert. Die Session-UI zeigt sie fixiert über dem Chat.
 
 ---
 
@@ -273,4 +314,4 @@ Die Recherche für das Schweige-Problem-Kapitel hat drei Quellen identifiziert, 
 
 ---
 
-*Zuletzt aktualisiert: Juli 2026*
+*Zuletzt aktualisiert: 29. Juli 2026 — MVP-Priorisierung ergänzt*
