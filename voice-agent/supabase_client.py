@@ -22,14 +22,26 @@ def get_client() -> Client:
     return _client
 
 
-def write_message(session_id: str, user_id: str, role: str, content: str) -> None:
+def write_message(
+    session_id: str,
+    user_id: str,
+    role: str,
+    content: str,
+    risk_level: str | None = None,
+    risk_terms: list[str] | None = None,
+) -> None:
     """Schreibt eine Nachricht in die messages-Tabelle — dieselbe Tabelle,
     die auch der Textmodus nutzt (siehe app/api/chat/route.ts)."""
     if not content.strip():
         return
-    get_client().table("messages").insert({
+    row = {
         "session_id": session_id,
         "user_id": user_id,
         "role": role,
         "content": content,
-    }).execute()
+    }
+    if risk_level is not None:
+        row["risk_level"] = risk_level
+    if risk_terms:
+        row["risk_terms"] = risk_terms
+    get_client().table("messages").insert(row).execute()

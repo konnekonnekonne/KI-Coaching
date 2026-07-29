@@ -8,7 +8,7 @@
 
 *Produktmanagement-Perspektive statt reiner Aufgabenliste: Was ist die kleinste Plattform, die (a) mit echten Pilot-Teilnehmenden ethisch vertretbar ist, (b) tatsächlich zeigt, was die Arbeit behauptet ("Methode vor Modell", nicht generischer Chatbot mit Coaching-Anstrich), und (c) eine vollständige, auswertbare Coaching-Session liefert? Alles andere folgt nach dem MVP, siehe die jeweiligen Einzeleinträge unten.*
 
-1. **B-05b** — Deterministischer Krisen-Pre-Filter. Ethische Untergrenze für echte Teilnehmende, unabhängig von allem anderen umsetzbar (kann parallel zu #2 laufen).
+1. **B-05b** — Deterministischer Krisen-Pre-Filter. ✓ Umgesetzt (29. Juli 2026, Text + Voice).
 2. **B-23** — Session-Umgebung: persistente Anker + punktueller strukturierter Input. Voraussetzung dafür, dass #3 und #4 tatsächlich gut werden — deshalb vor beiden eingeordnet, nicht danach.
 3. **B-01 + B-02** — Werkzeugbeschreibungen + Tool-Auswahllogik. Größter Einzelposten, aber die methodische Kernthese der gesamten Arbeit — ohne das ist "Methode vor Modell" eine Behauptung ohne Substanz.
 4. **B-17** — Auftrag/Consent-Screen. Der Systemprompt behauptet aktuell wörtlich, das sei schon eingeholt — ist es nicht. Baut auf #2 auf (Checkbox-Bestätigung, persistente Anzeige).
@@ -88,16 +88,16 @@ Wenn der Coachee ausweicht, rationalisiert oder das Gespräch auf eine Meta-Eben
 ---
 
 ### B-05b — Serverseitiger Code-Filter vor dem LLM-Call (MIND-SAFE Hardening)
-**Priorität:** Hoch
-**Status:** Offen
+**Priorität:** Hoch (MVP #1)
+**Status:** Umgesetzt (29. Juli 2026) — Text- und Voice-Modus
 
 Aktuell ist MIND-SAFE ausschließlich eine Instruktion im Systemprompt — keine technische Sperre. Das Modell befolgt die Instruktion mit hoher, aber nicht absoluter Verlässlichkeit. Für einen Coaching-Kontext mit potentiell vulnerablen Personen ist das ein architektonisches Risiko.
 
-Ergänzung: Vor jedem LLM-Call prüft ein deterministischer Code-Filter (kein Modell, kein Ermessensspielraum) die User-Nachricht auf explizite Krisenbegriffe (Wortliste). Bei Treffer wird der LLM-Call nicht ausgeführt — stattdessen wird die Krisenressource direkt vom Server zurückgegeben.
+Umgesetzt: Vor jedem LLM-Call prüft der deterministische Signal-Scanner (`lib/signal-scanner.ts` für Text, `voice-agent/signal_scanner.py` für Voice — Wortlisten, kein Modell, kein Ermessensspielraum) die User-Nachricht. Bei Level "akut" wird der LLM-Call nicht ausgeführt — stattdessen wird ein fest verdrahteter Krisentext direkt zurückgegeben (Text: als SSE-Stream; Voice: per `TTSSpeakFrame` direkt gesprochen, am LLM vorbei). Niedrigere Risikolevel (niedrig/mittel/hoch) blockieren nicht, werden aber auf `messages.risk_level`/`risk_terms` mitgeschrieben — Audit-Trail für spätere Kontextklassifikation (Grundlage für B-01/B-02).
 
 Das löst nicht das Problem subtiler Krisensignale, setzt aber eine harte Untergrenze: bestimmte Muster lösen den Sicherheitsprotokoll immer aus, unabhängig vom Modellverhalten.
 
-**Aufwand:** Mittel — Wortliste definieren, Pre-Check in `/api/chat/route.ts` einbauen, Response-Logik ergänzen.
+**Umsetzung:** `app/api/chat/route.ts` (Text) und `voice-agent/bot.py::TranscriptWriter` (Voice) — dieselbe Wortliste/Logik in beiden Sprachen gespiegelt, unit-getestet (TS via `tsx`, Python via `uv run`).
 
 ---
 

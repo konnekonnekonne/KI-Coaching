@@ -39,6 +39,19 @@ export interface SignalScanResult {
   matchedTerms: string[]
 }
 
+/**
+ * Kanonischer Krisen-Antworttext (B-05b) — wird zurückgegeben, wenn der
+ * deterministische Pre-Filter "akut" meldet, statt einen LLM-Call
+ * auszuführen. Inhaltlich deckungsgleich mit der MIND-SAFE-Instruktion im
+ * Systemprompt (lib/system-prompt.ts), aber hier fest verdrahtet, damit sie
+ * unabhängig vom Modellverhalten garantiert ausgeliefert wird.
+ */
+export const CRISIS_RESPONSE_TEXT =
+  'Was du gerade beschreibst, klingt sehr ernst — und das nehme ich ernst. ' +
+  'Ich bin dafür nicht der richtige Ansprechpartner. Bitte wende dich jetzt an Menschen, ' +
+  'die dir wirklich helfen können: Die Telefonseelsorge ist kostenlos und rund um die Uhr erreichbar ' +
+  'unter 0800 111 0 111. Diese Session endet hier.'
+
 const LEVEL_ORDER: RiskLevel[] = ['keine', 'niedrig', 'mittel', 'hoch', 'akut']
 
 function escapeRegExp(term: string): string {

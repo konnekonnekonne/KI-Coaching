@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { SYSTEM_PROMPT } from '@/lib/system-prompt'
 import { COACHING_MODEL } from '@/lib/models'
+import { scanForSignals, CRISIS_RESPONSE_TEXT } from '@/lib/signal-scanner'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -25,6 +26,51 @@ export async function POST(request: Request) {
       return new Response('Invalid request body', { status: 400 })
     }
 
+    const lastUserMessage = !isGreeting
+      ? messages.findLast((m: { role: string }) => m.role === 'user')
+      : undefined
+    const signal = lastUserMessage ? scanForSignals(lastUserMessage.content) : null
+
+    // Deterministischer Pre-Filter (B-05b): akute Krisensignale umgehen das
+    // Modell vollständig -- unabhängig von dessen Verlässlichkeit. Kein
+    // LLM-Call, direkte, garantierte Antwort. Siehe docs/backlog.md B-05b.
+    if (signal?.level === 'akut') {
+      if (sessionId) {
+        await supabase.from('messages').insert({
+          session_id: sessionId,
+          user_id: user.id,
+          role: 'user',
+          content: lastUserMessage.content,
+          risk_level: signal.level,
+          risk_terms: signal.matchedTerms,
+        })
+        await supabase.from('messages').insert({
+          session_id: sessionId,
+          user_id: user.id,
+          role: 'assistant',
+          content: CRISIS_RESPONSE_TEXT,
+        })
+      }
+
+      const encoder = new TextEncoder()
+      const crisisStream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ text: CRISIS_RESPONSE_TEXT })}\n\n`)
+          )
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+          controller.close()
+        },
+      })
+      return new Response(crisisStream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive',
+        },
+      })
+    }
+
     // Begrüßung: leere History, Claude öffnet das Gespräch proaktiv
     // Normaler Chat: History + neue User-Nachricht
     const claudeMessages = isGreeting
@@ -41,19 +87,18 @@ export async function POST(request: Request) {
       messages: claudeMessages,
     })
 
-    // User-Nachricht in DB speichern — aber NICHT bei isGreeting
-    if (!isGreeting && sessionId) {
-      const lastUserMessage = messages.findLast(
-        (m: { role: string }) => m.role === 'user'
-      )
-      if (lastUserMessage) {
-        await supabase.from('messages').insert({
-          session_id: sessionId,
-          user_id: user.id,
-          role: 'user',
-          content: lastUserMessage.content,
-        })
-      }
+    // User-Nachricht in DB speichern — aber NICHT bei isGreeting.
+    // risk_level/risk_terms werden auch bei niedrigeren Stufen mitgespeichert
+    // (Audit-Trail für spätere Kontextklassifikation), ohne den Call zu blockieren.
+    if (!isGreeting && sessionId && lastUserMessage) {
+      await supabase.from('messages').insert({
+        session_id: sessionId,
+        user_id: user.id,
+        role: 'user',
+        content: lastUserMessage.content,
+        risk_level: signal?.level ?? 'keine',
+        risk_terms: signal?.matchedTerms?.length ? signal.matchedTerms : null,
+      })
     }
 
     const encoder = new TextEncoder()

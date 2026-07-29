@@ -25,7 +25,7 @@ from dotenv import load_dotenv
 from loguru import logger
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.audio.vad.vad_analyzer import VADParams
-from pipecat.frames.frames import Frame, LLMRunFrame, TextFrame
+from pipecat.frames.frames import Frame, LLMRunFrame, TextFrame, TTSSpeakFrame
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.worker import PipelineParams, PipelineWorker
 from pipecat.processors.aggregators.llm_context import LLMContext
@@ -47,6 +47,7 @@ from system_prompt import SYSTEM_PROMPT
 from models import COACHING_MODEL, VOICE_WEIBLICH, VOICE_MAENNLICH
 from supabase_client import write_message
 from anthropic_fix import SafeAnthropicLLMService
+from signal_scanner import scan_for_signals, CRISIS_RESPONSE_TEXT
 
 load_dotenv(override=True)
 
@@ -67,10 +68,15 @@ COACHING_VAD_STOP_SECS = 2.0
 
 class TranscriptWriter(FrameProcessor):
     """Schreibt jede vorbeifliessende Text-Aeusserung nach Supabase, in
-    dieselbe messages-Tabelle wie der Textmodus. Reines Beobachten -- laesst
-    alle Frames unveraendert durch. Zweimal in der Pipeline platziert (nach
-    STT fuer die Nutzer-Seite, nach dem LLM fuer KICOs Antworten), weil jede
-    Instanz nur die Frames sieht, die an ihrer Position vorbeikommen."""
+    dieselbe messages-Tabelle wie der Textmodus. Zweimal in der Pipeline
+    platziert (nach STT fuer die Nutzer-Seite, nach dem LLM fuer KICOs
+    Antworten), weil jede Instanz nur die Frames sieht, die an ihrer Position
+    vorbeikommen.
+
+    Fuer role="user" zusaetzlich deterministischer Krisen-Pre-Filter (B-05b,
+    docs/backlog.md): bei "akut" wird der Frame NICHT weitergereicht (das LLM
+    bekommt diesen Turn nie zu sehen), stattdessen wird der Krisentext direkt
+    per TTSSpeakFrame gesprochen -- unabhaengig vom Modellverhalten."""
 
     def __init__(self, session_id: str, user_id: str, role: str):
         super().__init__()
@@ -80,8 +86,24 @@ class TranscriptWriter(FrameProcessor):
 
     async def process_frame(self, frame: Frame, direction: FrameDirection):
         await super().process_frame(frame, direction)
+
         if isinstance(frame, TextFrame) and frame.text.strip():
-            write_message(self.session_id, self.user_id, self.role, frame.text)
+            if self.role == "user":
+                signal = scan_for_signals(frame.text)
+                write_message(
+                    self.session_id, self.user_id, self.role, frame.text,
+                    risk_level=signal.level, risk_terms=signal.matched_terms,
+                )
+                if signal.level == "akut":
+                    write_message(self.session_id, self.user_id, "assistant", CRISIS_RESPONSE_TEXT)
+                    await self.push_frame(
+                        TTSSpeakFrame(text=CRISIS_RESPONSE_TEXT, append_to_context=False),
+                        direction,
+                    )
+                    return  # Original-Frame nicht weiterreichen -- kein LLM-Call fuer diesen Turn
+            else:
+                write_message(self.session_id, self.user_id, self.role, frame.text)
+
         await self.push_frame(frame, direction)
 
 
