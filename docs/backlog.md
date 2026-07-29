@@ -23,36 +23,23 @@
 
 ### B-01 — Werkzeugbeschreibungen fehlen
 **Priorität:** Hoch
-**Status:** Offen
+**Status:** Größtenteils umgesetzt (`docs/tools.md`, 29. Juli 2026)
 
-Die ~20 INA CCW-Tools sind im Prompt namentlich aufgeführt, aber nicht beschrieben. Das Modell kennt die Namen, nicht die Logik. Für jeden Tool fehlt:
-- Zweck (was bewirkt dieses Werkzeug im Gespräch?)
-- Kernfragen (3–4 Schlüsselfragen, die durch das Tool führen)
-- Abschlussindikator (woran merke ich, dass das Tool abgeschlossen ist?)
+Die ~20 INA CCW-Tools waren im Prompt namentlich aufgeführt, aber nicht beschrieben. `docs/tools.md` schließt die Lücke: für ~30 Werkzeuge aus dem vollständigen INA CCW-Methodenkorpus sind Kurzprinzip, Coaching-Anlass/Trigger, Kernprozess, U-Modell-Phase und Visualisierungs-Topologie erfasst.
 
-Ohne diese Beschreibungen fällt das Modell auf generisches Coaching-Verhalten zurück, statt methodisch zu arbeiten.
+*Bezug zu B-23:* Mehrere Tools (Inneres Team, Perspektivenrad, Bodenanker-artige Techniken) brauchen strukturierte, persistent sichtbare Artefakte, nicht nur Fließtext. `docs/tools.md` dokumentiert dafür bereits eine Visualisierungs-Topologien-Taxonomie (9 wiederkehrende Strukturen) — die tatsächliche UI dafür (Canvas/flexibles Layout statt linearer Chat-Bubbles) ist eigenständig offen, siehe Diskussion zu Session-Umgebung/Canvas (noch nicht in eigenem Backlog-Eintrag erfasst).
 
-*Bezug zu B-23:* Mehrere Tools (Inneres Team, Perspektivenrad, Bodenanker-artige Techniken) brauchen strukturierte, persistent sichtbare Artefakte, nicht nur Fließtext. Ohne die Session-Umgebung aus B-23 lässt sich die inhaltliche Beschreibung dieser Tools nicht vollständig in echtes Verhalten übersetzen.
-
-**Aufwand:** Hoch — erfordert inhaltliche Durcharbeitung jedes einzelnen Tools.
+**Verbleibend offen:** Nicht jedes Tool aus `docs/tools.md` ist bereits im Systemprompt aktiv referenziert — der Prompt listet aktuell die etablierten ~25 Werkzeuge phasenweise (siehe B-02), einige in `tools.md` dokumentierte Randfälle (Systemische Strukturaufstellung, Hermeneutisch-strukturgenetische Textinterpretation — beide laut Quelle nur für erfahrene Coaches) bewusst nicht.
 
 ---
 
 ### B-02 — Tool-Auswahllogik fehlt
 **Priorität:** Hoch
-**Status:** Offen — hängt von B-01 ab
+**Status:** Teilweise umgesetzt (29. Juli 2026)
 
-Es gibt keine Guidance, wann welches Tool eingesetzt wird. Das Modell kann nicht eigenständig zwischen Tetralemma, Innerem Team, Logischen Ebenen oder Perspektivenrad wählen, weil keine Indikationskriterien definiert sind.
+Es gab keine Guidance, wann welches Tool eingesetzt wird. `docs/tools.md` liefert jetzt eine Phasen-Mapping-Tabelle (Theory U ↔ KICO-Phase) und eine Schnellübersicht Phase→Werkzeuge; der neu aufgebaute Systemprompt (`lib/system-prompt.ts`/`voice-agent/system_prompt.py`, Abschnitt "Methodenkorpus nach Phase") übernimmt diese Zuordnung direkt als Verhaltensregel ("Wähle das Werkzeug passend zur aktuellen Phase").
 
-Benötigt wird eine Entscheidungslogik, z.B.:
-- Zwei explizite Optionen → Tetralemma
-- Werte oder Identitätsfragen → Logische Ebenen / 5 Säulen
-- Feststecken in einer Perspektive → Perspektivenrad / Erweiterter Perspektivwechsel
-- Innere Konflikte, mehrere Stimmen → Inneres Team
-- Ziel vorhanden, kein Weg → Wege zum Ziel
-- Breites, unklares Anliegen → Skalierung oder Zielematrix
-
-**Aufwand:** Mittel — sobald B-01 gelöst ist, relativ schnell umsetzbar.
+**Verbleibend offen:** Das ist eine grobe Phasen-Heuristik, keine echte Indikationslogik (z.B. "zwei explizite Optionen → Tetralemma" vs. "innere Konflikte → Inneres Team" — beide sind Wendepunkt-Tools, der Prompt unterscheidet noch nicht danach). Feinere Auswahlkriterien *innerhalb* einer Phase bleiben ein offener Ausbauschritt, ebenso die Frage, ob der volle Tool-Text (`docs/tools.md`) langfristig per Retrieval statt vollständiger Prompt-Injektion geladen werden sollte (siehe Zweck-Abschnitt in `tools.md`).
 
 ---
 
@@ -152,11 +139,11 @@ Ohne dieses System bleiben B-01 (viele INA-CCW-Tools brauchen genau solche Artef
 
 ### B-17 — Auftrag-UI-Screen (A in AZF)
 **Priorität:** Mittel (MVP)
-**Status:** Konzipiert, nicht gebaut
+**Status:** Konzipiert, nicht gebaut — Grundannahme korrigiert (29. Juli 2026, siehe `docs/rahmen.md`)
 
-Das System-Prompt formuliert: "Der Auftrag (A) wurde bereits durch die Benutzeroberfläche eingeholt." Diese UI existiert noch nicht. Derzeit startet KICO direkt mit der Ziel-Frage, ohne dass der Coachee bewusst zugestimmt hat.
+Das System-Prompt formulierte bisher: "Der Auftrag (A) wurde bereits durch die Benutzeroberfläche eingeholt." Diese UI existiert weiterhin nicht — aber `docs/rahmen.md` (Abschnitt 6) korrigiert die zugrundeliegende Annahme: Der *organisatorische* Auftrag (wer, warum, welcher Rahmen) ist tatsächlich ein UI-Fall (dieser Eintrag bleibt dafür gültig), aber die *coaching-fachliche* Kontextklärung (M2: "Fragen zum Kontext") ist dialogisch und gehört zwingend in die Session selbst. Der neue Systemprompt bildet das jetzt als eigene Phase 1a "Kontakt & Orientierung" ab, unabhängig davon, ob B-17 je gebaut wird.
 
-Vorschlag: Ein einfacher Zwischenscreen vor dem eigentlichen Session-Start. Fragt nach dem Anliegen (1–2 Sätze, formfrei) und holt die informierte Einwilligung ein. Übergibt das Anliegen dann als Kontext an KICO, ohne dass KICO nochmals danach fragt.
+Vorschlag für die UI bleibt: Ein einfacher Zwischenscreen vor dem eigentlichen Session-Start. Fragt nach dem Anliegen (1–2 Sätze, formfrei) und holt die informierte Einwilligung ein. Übergibt das Anliegen dann als Kontext an KICO, ohne dass KICO nochmals danach fragt.
 
 *Bezug zu B-23:* Die vorgeschlagene explizite Checkbox-Bestätigung (statt nur eines Freitextfelds) und die Frage, ob/wie der Auftrag danach persistent sichtbar bleibt, sind Spezialfälle des allgemeineren Anker-/Input-Systems aus B-23 — beide Punkte sollten zusammen entworfen werden, nicht getrennt.
 

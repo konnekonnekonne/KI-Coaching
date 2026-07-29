@@ -10,6 +10,29 @@ Bei KICO ist der Systemprompt die zentrale Stelle, an der das Architekturprinzip
 
 ---
 
+## Neuaufbau vom 29. Juli 2026 — von behaupteter zu fachlich begründeter Struktur
+
+Der Systemprompt wurde am 29. Juli 2026 grundlegend neu aufgebaut. Anlass war eine Klarstellung des Nutzers: Frühere Gespräche in diesem Projekt behandelten den bestehenden Systemprompt fälschlich als feste, kaum verhandelbare Grundlage, obwohl er nie wirklich fachlich diskutiert oder aus dem INA CCW-Ausbildungsmaterial abgeleitet worden war — er war weitgehend aus eigenen Annahmen entstanden. Konkret sichtbar wurde das an zwei Stellen:
+
+- Der bisherige Prompt behauptete: "Der Auftrag (A) wurde bereits durch die Benutzeroberfläche eingeholt." Diese UI existiert nicht (siehe Backlog B-17) — die Aussage war schlicht falsch.
+- Die Coaching-Methodik (Rollenverständnis, Auftragsklärung, aktives Zuhören, Gesprächsphasen) stützte sich auf keine der INA CCW-Quellunterlagen, sondern auf eine schlanke, selbst entworfene "ZF-Struktur".
+
+Um das zu beheben, wurden drei bis dahin ungesichtete Ausbildungs-Handouts gelesen (M6 "Das Coachingkonzept", M2 "Systemische Grundlagen des Coachings kennen, Kontext und Auftrag klären", "Meine Rolle als Coach"/C03) und in [rahmen.md](rahmen.md) kuratiert zusammengefasst — als Gegenstück zu [tools.md](tools.md), das die einzelnen Werkzeuge dokumentiert, während `rahmen.md` das beschreibt, was vor und um jedes Werkzeug herum liegt: Sessioneinstieg, Auftragsklärung, Rolle des Coachs, aktives Zuhören.
+
+Der Prompt wurde danach vollständig neu aus diesen beiden Quelldateien aufgebaut, nicht nur ergänzt. Wesentliche inhaltliche Änderungen gegenüber der Vorversion:
+
+- **Neue Phase 1a "Kontakt & Orientierung"** vor der bisherigen Ziel/Frage-Klärung — löst die falsche Auftrags-Behauptung auf, indem die coaching-fachliche Kontextklärung (M2: "Fragen zum Kontext") explizit in den Dialog verlegt wird, während der rein organisatorische Auftrags-Rahmen weiterhin ein offener UI-Fall bleibt (B-17).
+- **Rollenklarheit erweitert** um aktive Verhaltenskomponenten ("Wer fragt, führt", Prozessexperte statt Inhaltsexperte, radikal-konstruktivistische Begründung dafür, warum KICO nie Tatsachenbehauptungen über die innere Welt des Coachees formulieren darf).
+- **Aktives Zuhören** jetzt mit den vier Ebenen aus M2 (Downloading, gegenständlich-unterschiedlich, empathisch, schöpferisch) und der expliziten Fehlerliste (Erwidern statt zuhören, Interpretieren statt annehmen etc.) — für ein Sprachmodell direkt handlungsrelevant, weil es bekannte LLM-Risiken benennt.
+- **Lösungsorientierung** als eigener Abschnitt (Insoo Kim Bergs drei Leitsätze), begründet die bereits vorhandene Wunderfrage/Ausnahmefragen-Praxis fachlich nach.
+- **Methodenkorpus neu nach Phase statt nur nach Kategorie gelistet** — direkte Umsetzung der Phasen-Zuordnung aus `docs/tools.md`, ein erster, noch grober Baustein von Backlog B-02 (Tool-Auswahllogik).
+
+Bewusst nicht verändert: Das 5-Phasen-U-Modell selbst (Einstieg, Vertiefung, Wendepunkt, Lösungsraum, Transfer) bleibt bestehen, ebenso `set_anchor`-Logik, Krisenfilter-Anbindung, Sprachregeln und die verbotenen Fragen. `rahmen.md` bestätigt die bisherige Phasenstruktur fachlich (Abgleich mit Theorie U, M2-4-Phasen-Modell und M6-6-Schritte-Ablauf), ändert sie aber nicht.
+
+Diese Überarbeitung ist ein Beispiel für ein wiederkehrendes Muster in diesem Projekt: Architekturentscheidungen, die früh und unter Zeitdruck aus Annahmen getroffen wurden, werden revidiert, sobald das fachliche Ausbildungsmaterial tatsächlich vorliegt und gelesen wurde — nicht als Fehlerkorrektur im negativen Sinn, sondern als erwarteter Teil eines Prototypen, der sich mit zunehmendem Materialzugriff methodisch verbessert.
+
+---
+
 ## Aufbau des KICO-Systemprompts
 
 Der Prompt ist in sieben Abschnitte gegliedert, die direkt den Qualitätsnormen (QN-01 bis QN-09) aus der Abschlussarbeit entsprechen:
