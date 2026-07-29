@@ -121,7 +121,7 @@ Längerfristig ermöglicht das: Phasenübergänge erfordern explizite Bestätigu
 
 ### B-23 — Session-Umgebung: Persistente Anker + punktueller strukturierter Input
 **Priorität:** Hoch (MVP-Voraussetzung für B-01/B-02, B-17)
-**Status:** Offen — konzeptionell benannt (29. Juli 2026), noch nicht designt
+**Status:** Kernmechanismus umgesetzt (29. Juli 2026) — Mechanismus 1 (explizite Checkbox-Pause) folgt bei B-17
 
 Text und Voice sind aktuell zwei komplett getrennte UI-Pfade. Die Realität des Coachings braucht aber unabhängig vom Gesprächsmodus:
 - **Persistente Anker:** Elemente, die während der gesamten Session sichtbar bleiben müssen — die Coachingfrage (B-18), Skalierungswerte, Ergebnisse aus Tools mit räumlicher/struktureller Komponente (z. B. Bodenanker im Inneren Team oder Perspektivenrad).
@@ -133,7 +133,16 @@ Zwei denkbare Mechanismen, noch nicht entschieden:
 
 Ohne dieses System bleiben B-01 (viele INA-CCW-Tools brauchen genau solche Artefakte) und B-17 (Auftrag-Bestätigung) nur unvollständig umsetzbar — deshalb vor bzw. parallel zu beiden eingeordnet, nicht danach.
 
-**Aufwand:** Hoch — echte Session-UI-Architektur-Frage, betrifft ChatWindow und VoiceSession gleichermaßen. Welcher Mechanismus (oder welche Kombination) zum Einsatz kommt, ist eine offene Design-Entscheidung, bewusst nicht in diesem Eintrag vorweggenommen.
+**Umgesetzt (Mechanismus 2 — KICO erfasst im Gespräch, Extraktion, Anzeige):**
+- Tabelle `session_anchors` (Migration 005), RLS + Realtime-Publikation.
+- Natives Anthropic Tool-Use: `set_anchor(key, label, kind, value)`. Text-Modus: gebundene Tool-Use-Schleife in `app/api/chat/route.ts` (max. 3 Runden, Client sieht nur durchgängigen Text). Voice-Modus: Pipecats `register_function`-Mechanismus in `voice-agent/bot.py`, identisches Tool-Schema.
+- `SessionAnchors.tsx` — persistente Anzeige, live per Supabase Realtime, in `SessionShell.tsx` über Text- und Voice-Modus gleichermaßen eingebunden.
+- Systemprompt instruiert KICO, `set_anchor` für die Coachingfrage (key="coaching_question", direkt verknüpft mit B-18) und Skalierungswerte zu nutzen.
+- Zusätzlich: `BackgroundOperationsPanel.tsx` — ausklappbares Panel für Hintergrundprozesse (Rohtranskript, Trigger-Wort-Monitoring aus B-05b, künftig Sentiment/Konsistenz/QN aus Task 6). Bewusst für alle sichtbar, nicht versteckt — Forschungsprototyp, kein kommerzielles Produkt, Transparenz über Hintergrundprozesse passt zum eigenen Forschungsziel.
+
+**Noch offen (Mechanismus 1 — explizite Pause für strukturierte Bestätigung):** Ein UI-Element, das das Gespräch für eine bewusste Checkbox-/Slider-Eingabe pausiert, statt nur bereits Gesagtes zu erfassen. Wird gezielt bei B-17 (Auftrag-Bestätigung) gebaut, nicht hier vorweggenommen.
+
+**Aufwand:** Hoch — echte Session-UI-Architektur-Frage, betraf ChatWindow und VoiceSession gleichermaßen.
 
 ---
 
@@ -151,7 +160,7 @@ Vorschlag: Ein einfacher Zwischenscreen vor dem eigentlichen Session-Start. Frag
 
 ### B-18 — Coaching-Frage als persistenter Anker
 **Priorität:** Mittel (MVP, Teilmenge von B-23)
-**Status:** Konzipiert, nicht gebaut
+**Status:** Umgesetzt (29. Juli 2026) — als erste konkrete Anwendung von B-23
 
 Der System-Prompt beschreibt die Coaching-Frage als "roten Faden", den KICO wörtlich zurückspiegelt und durch die Session trägt. Methodisch wäre es stärker, wenn die Frage auch visuell präsent bleibt: einmalig vom Coachee formuliert, dann fixiert sichtbar — im Text- **und** im Voice-Modus, nicht nur "am oberen Rand des Chat-Fensters".
 

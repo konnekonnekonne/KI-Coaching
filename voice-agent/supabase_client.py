@@ -45,3 +45,18 @@ def write_message(
     if risk_terms:
         row["risk_terms"] = risk_terms
     get_client().table("messages").insert(row).execute()
+
+
+def upsert_anchor(session_id: str, user_id: str, key: str, label: str, kind: str, value) -> None:
+    """Speichert/aktualisiert einen persistenten Anker (B-23, docs/backlog.md)."""
+    get_client().table("session_anchors").upsert(
+        {
+            "session_id": session_id,
+            "user_id": user_id,
+            "key": key,
+            "label": label,
+            "kind": kind,
+            "value": value,
+        },
+        on_conflict="session_id,key",
+    ).execute()

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { SYSTEM_PROMPT } from '@/lib/system-prompt'
 import { COACHING_MODEL } from '@/lib/models'
 import { scanForSignals, CRISIS_RESPONSE_TEXT } from '@/lib/signal-scanner'
+import { SET_ANCHOR_TOOL, type AnchorToolInput } from '@/lib/anchors'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -10,6 +11,89 @@ const anthropic = new Anthropic({
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
+
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
+
+/**
+ * Fuehrt eine Konversationsrunde mit Claude aus, inkl. gebundener Tool-Use-
+ * Schleife fuer set_anchor (B-23, docs/backlog.md). Streamt Text sofort an
+ * den Client; Tool-Aufrufe passieren dazwischen unsichtbar fuer den Client --
+ * der sieht nur Text, unabhaengig davon, ob ein Anker dabei gesetzt wurde.
+ */
+async function runConversationTurn(
+  initialMessages: Anthropic.MessageParam[],
+  controller: ReadableStreamDefaultController,
+  encoder: TextEncoder,
+  supabase: SupabaseServerClient,
+  sessionId: string | null,
+  userId: string
+): Promise<string> {
+  let messages = initialMessages
+  let fullAssistantText = ''
+  const MAX_TOOL_ROUNDS = 3
+
+  for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+    const stream = anthropic.messages.stream({
+      model: COACHING_MODEL,
+      max_tokens: 1024,
+      system: SYSTEM_PROMPT,
+      messages,
+      tools: [SET_ANCHOR_TOOL],
+    })
+
+    for await (const chunk of stream) {
+      if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+        fullAssistantText += chunk.delta.text
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`))
+      }
+    }
+
+    const finalMessage = await stream.finalMessage()
+
+    if (finalMessage.stop_reason !== 'tool_use') {
+      return fullAssistantText
+    }
+
+    const toolUseBlocks = finalMessage.content.filter(
+      (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
+    )
+    const toolResults: Anthropic.ToolResultBlockParam[] = []
+
+    for (const block of toolUseBlocks) {
+      if (block.name === 'set_anchor' && sessionId) {
+        const input = block.input as AnchorToolInput
+        await supabase.from('session_anchors').upsert(
+          {
+            session_id: sessionId,
+            user_id: userId,
+            key: input.key,
+            label: input.label,
+            kind: input.kind,
+            value: input.value,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'session_id,key' }
+        )
+        toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: 'gespeichert' })
+      } else {
+        toolResults.push({
+          type: 'tool_result',
+          tool_use_id: block.id,
+          content: 'Unbekanntes Tool oder keine sessionId',
+          is_error: true,
+        })
+      }
+    }
+
+    messages = [
+      ...messages,
+      { role: 'assistant', content: finalMessage.content },
+      { role: 'user', content: toolResults },
+    ]
+  }
+
+  return fullAssistantText
+}
 
 export async function POST(request: Request) {
   try {
@@ -80,13 +164,6 @@ export async function POST(request: Request) {
           content: m.content,
         }))
 
-    const stream = await anthropic.messages.stream({
-      model: COACHING_MODEL,
-      max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      messages: claudeMessages,
-    })
-
     // User-Nachricht in DB speichern — aber NICHT bei isGreeting.
     // risk_level/risk_terms werden auch bei niedrigeren Stufen mitgespeichert
     // (Audit-Trail für spätere Kontextklassifikation), ohne den Call zu blockieren.
@@ -102,20 +179,17 @@ export async function POST(request: Request) {
     }
 
     const encoder = new TextEncoder()
-    let fullAssistantMessage = ''
 
     const readableStream = new ReadableStream({
       async start(controller) {
-        for await (const chunk of stream) {
-          if (
-            chunk.type === 'content_block_delta' &&
-            chunk.delta.type === 'text_delta'
-          ) {
-            const text = chunk.delta.text
-            fullAssistantMessage += text
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`))
-          }
-        }
+        const fullAssistantMessage = await runConversationTurn(
+          claudeMessages,
+          controller,
+          encoder,
+          supabase,
+          sessionId ?? null,
+          user.id
+        )
 
         // KICO-Antwort immer speichern (auch Begrüßung)
         if (fullAssistantMessage && sessionId) {

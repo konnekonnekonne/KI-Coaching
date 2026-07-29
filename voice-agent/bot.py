@@ -28,7 +28,9 @@ from pipecat.audio.vad.vad_analyzer import VADParams
 from pipecat.frames.frames import Frame, LLMRunFrame, TextFrame, TTSSpeakFrame
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.worker import PipelineParams, PipelineWorker
+from pipecat.adapters.schemas.function_schema import FunctionSchema
 from pipecat.processors.aggregators.llm_context import LLMContext
+from pipecat.services.llm_service import FunctionCallParams
 from pipecat.processors.aggregators.llm_response_universal import (
     LLMContextAggregatorPair,
     LLMUserAggregatorParams,
@@ -45,7 +47,7 @@ from pipecat.workers.runner import WorkerRunner
 
 from system_prompt import SYSTEM_PROMPT
 from models import COACHING_MODEL, VOICE_WEIBLICH, VOICE_MAENNLICH
-from supabase_client import write_message
+from supabase_client import write_message, upsert_anchor
 from anthropic_fix import SafeAnthropicLLMService
 from signal_scanner import scan_for_signals, CRISIS_RESPONSE_TEXT
 
@@ -107,6 +109,51 @@ class TranscriptWriter(FrameProcessor):
         await self.push_frame(frame, direction)
 
 
+# Session-Umgebung (B-23, docs/backlog.md): set_anchor-Tool, identisch zu
+# lib/anchors.ts fuer den Textmodus -- funktioniert hier ueber Pipecats
+# native Function-Calling-Unterstuetzung (register_function), die den
+# Tool-Result-Roundtrip automatisch uebernimmt.
+SET_ANCHOR_SCHEMA = FunctionSchema(
+    name="set_anchor",
+    description=(
+        "Speichert einen wichtigen Wert als persistenten, fuer den Coachee sichtbaren Anker "
+        "fuer den Rest der Session -- z. B. die Coachingfrage, einen Skalierungswert, oder ein "
+        "Ergebnis aus einem Methodenwerkzeug (z. B. Bodenanker). Rufe dieses Tool auf, sobald "
+        "ein solcher Wert im Gespraech klar geworden ist. Wiederholtes Aufrufen mit demselben "
+        "key aktualisiert den bestehenden Anker."
+    ),
+    properties={
+        "key": {
+            "type": "string",
+            "description": "Stabiler Bezeichner, z. B. 'coaching_question', 'scaling_ziel'.",
+        },
+        "label": {
+            "type": "string",
+            "description": 'Kurzer, fuer den Coachee verstaendlicher Anzeigename, z. B. "Deine Coachingfrage".',
+        },
+        "kind": {
+            "type": "string",
+            "enum": ["text", "number", "list", "checkbox"],
+            "description": "Datentyp des Werts.",
+        },
+        "value": {"description": "Der eigentliche Wert -- String, Zahl, Liste oder Boolean."},
+    },
+    required=["key", "label", "kind", "value"],
+)
+
+
+def make_set_anchor_handler(session_id: str, user_id: str):
+    async def handle_set_anchor(params: FunctionCallParams) -> None:
+        args = params.arguments
+        upsert_anchor(
+            session_id, user_id,
+            key=args["key"], label=args["label"], kind=args["kind"], value=args["value"],
+        )
+        await params.result_callback({"status": "gespeichert"})
+
+    return handle_set_anchor
+
+
 async def run_bot(transport: BaseTransport, runner_args: RunnerArguments) -> None:
     """Baut und startet die Pipeline fuer eine einzelne Voice-Session.
 
@@ -148,8 +195,9 @@ async def run_bot(transport: BaseTransport, runner_args: RunnerArguments) -> Non
             system_instruction=SYSTEM_PROMPT,
         ),
     )
+    llm.register_function("set_anchor", make_set_anchor_handler(session_id, user_id))
 
-    context = LLMContext()
+    context = LLMContext(tools=[SET_ANCHOR_SCHEMA])
     user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
         context,
         user_params=LLMUserAggregatorParams(

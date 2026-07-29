@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Mic, PhoneOff } from 'lucide-react'
 import { ChatWindow } from './ChatWindow'
 import { VoiceSession } from './VoiceSession'
+import { SessionAnchors } from './SessionAnchors'
+import { BackgroundOperationsPanel } from './BackgroundOperationsPanel'
 import { createClient } from '@/lib/supabase/client'
 
 interface Message {
@@ -104,6 +106,7 @@ export function SessionShell({ sessionId, initialMessages }: SessionShellProps) 
             Session beenden
           </button>
         </div>
+        <SessionAnchors sessionId={sessionId} />
         <div className="flex-1 overflow-hidden">
           <ChatWindow
             sessionId={sessionId}
@@ -111,6 +114,7 @@ export function SessionShell({ sessionId, initialMessages }: SessionShellProps) 
             onMessagesChange={setCurrentMessages}
           />
         </div>
+        <BackgroundOperationsPanel sessionId={sessionId} />
       </div>
     )
   }
@@ -119,11 +123,15 @@ export function SessionShell({ sessionId, initialMessages }: SessionShellProps) 
   if (mode === 'voice') {
     return (
       <div className="flex flex-col h-full">
-        <VoiceSession
-          sessionId={sessionId}
-          priorMessages={currentMessages.map(m => ({ role: m.role, content: m.content }))}
-          onEnd={handleVoiceEnd}
-        />
+        <SessionAnchors sessionId={sessionId} />
+        <div className="flex-1 overflow-hidden">
+          <VoiceSession
+            sessionId={sessionId}
+            priorMessages={currentMessages.map(m => ({ role: m.role, content: m.content }))}
+            onEnd={handleVoiceEnd}
+          />
+        </div>
+        <BackgroundOperationsPanel sessionId={sessionId} />
       </div>
     )
   }
