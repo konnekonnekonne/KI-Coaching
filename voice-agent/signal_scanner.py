@@ -40,7 +40,10 @@ class SignalScanResult:
 
 
 def _contains_term(text: str, term: str) -> bool:
-    pattern = r"\b" + re.escape(term) + r"\b"
+    # Nur führende Wortgrenze -- siehe lib/signal-scanner.ts für die
+    # Begründung (deutsche Komposita wie "Suizidgedanken" wurden mit
+    # beidseitiger Wortgrenze nicht erkannt; in Produktion aufgefallen).
+    pattern = r"\b" + re.escape(term)
     return re.search(pattern, text, re.IGNORECASE) is not None
 
 

@@ -59,7 +59,15 @@ function escapeRegExp(term: string): string {
 }
 
 function containsTerm(text: string, term: string): boolean {
-  const pattern = new RegExp(`\\b${escapeRegExp(term)}\\b`, 'i')
+  // Nur führende Wortgrenze, keine nachfolgende: deutsche Komposita hängen
+  // Suffixe direkt an ("Suizidgedanken", "Selbstmordabsicht") — ein
+  // \bterm\b-Muster verpasst diese Fälle vollständig (in Produktion
+  // gefunden: "Suizidgedanken" wurde nicht erkannt). Die führende Grenze
+  // bleibt wichtig, damit z.B. "sucht" nicht in "versucht"/"besuchte"
+  // anschlägt. Verbleibende Lücke: Komposita, in denen der Begriff als
+  // Suffix auftritt (z.B. "Erschöpfungsdepression"), werden weiterhin nicht
+  // erkannt — siehe Datei-Kommentar zum vorläufigen Charakter der Liste.
+  const pattern = new RegExp(`\\b${escapeRegExp(term)}`, 'i')
   return pattern.test(text)
 }
 
