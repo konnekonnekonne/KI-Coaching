@@ -187,6 +187,16 @@ Im Dashboard ist "Zugriff auf Protokolle" als Feature geplant, aber nicht umgese
 
 ---
 
+### B-25 — Homepage und Dashboard (nach Login) überarbeiten
+**Priorität:** Mittel
+**Status:** Offen
+
+Nutzerrückmeldung (29. Juli 2026): Sowohl die öffentliche Homepage als auch das Dashboard nach dem Login brauchen eine grundlegende Überarbeitung. Noch nicht weiter spezifiziert, welche konkreten Punkte betroffen sind (Layout, Inhalt, Informationsarchitektur oder alles zusammen) — als Marker gesetzt, damit es nicht verloren geht.
+
+*Bezug zur Canvas-Diskussion:* Sollte nicht isoliert vom geplanten Design-System-Ausbau für die Session-Umgebung (Canvas/Modularität, siehe Konversationsverlauf 29./30. Juli 2026) betrachtet werden — wenn ein neues visuelles Vokabular für die Session entsteht, sollte Homepage/Dashboard stilistisch konsistent mitgezogen werden, statt zwei parallele Design-Sprachen zu pflegen.
+
+---
+
 ### B-22 — Netlify zeigte auf falsches (altes) Supabase-Projekt
 **Priorität:** Hoch
 **Status:** Behoben (29. Juli 2026)
@@ -276,6 +286,16 @@ Standard: Jede Voice-Komponente, die für diese Plattform evaluiert wird, muss n
 **Status:** Durch B-20 überholt
 
 `docs/05_voice-architektur.md` enthielt veraltete, nie wirksame Semantic-VAD-Parameter (`silence_duration_ms: 1800`, `threshold: 0.8`). Statt die alte Dokumentation zu synchronisieren, wurde sie im Zuge von B-20 als historisches Dokument markiert (Banner in `05_voice-architektur.md`) — eine Synchronisation ist damit hinfällig, die Zielarchitektur wird stattdessen unter `10_` und folgenden neu dokumentiert.
+
+---
+
+### B-24 — Stimmqualität beobachten: Hintergrundrauschen, verschluckte Worte
+**Priorität:** Mittel
+**Status:** Beobachten — noch kein Entscheidungsbedarf, kein Fix
+
+Nutzerrückmeldung aus einer Live-Session (29. Juli 2026): Die aktuell eingesetzten Deepgram-Aura-2-Stimmen (`aura-2-aurelia-de` / `aura-2-fabian-de`, siehe B-20) klingen streckenweise mit einem leichten Hintergrundrauschen und verschlucken gelegentlich einzelne Worte. Noch unklar, ob das an der Stimme selbst liegt, an der Aussprache bestimmter Wörter/Sonderzeichen, an der Netzwerkstrecke oder an einer allgemeinen Aura-2-Modell-Eigenschaft.
+
+**Nächster Schritt, kein sofortiger:** Über mehrere Sessions hinweg beobachten, ob das Muster reproduzierbar ist (bestimmte Wörter? bestimmte Tageszeiten/Auslastung?) — erst danach entscheiden, ob ein Stimmwechsel (andere Aura-2-Stimme oder anderer TTS-Anbieter) gerechtfertigt ist. Kein Automatismus: ein Stimmwechsel wäre ein spürbarer Eingriff (andere Klangcharakteristik für wiederkehrende Coachees) und sollte nicht auf Basis eines einzelnen Testeindrucks erfolgen.
 
 ---
 
