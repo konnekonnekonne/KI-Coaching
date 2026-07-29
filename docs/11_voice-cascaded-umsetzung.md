@@ -80,11 +80,14 @@ Diese vier Punkte sind exemplarisch dafür, dass Dokumentation und tatsächliche
 
 ---
 
+## Task 10 — End-to-End-Test: bestanden (29. Juli 2026)
+
+Nach Behebung der oben dokumentierten Stolpersteine (Netlify/Supabase-Projekt-Mismatch, Resend-SMTP-Einrichtung, fehlendes `<audio>`-Element, Pipecat-Issue #4992) wurde ein vollständiges, mehrere Wechsel umfassendes Gespräch über echtes Mikrofon erfolgreich getestet: Login, Sprachein- und -ausgabe in beiden Richtungen, `stop_secs=2.0` fühlte sich im echten Gebrauch gut an, keine Verbindungsabbrüche mehr, Gesprächsführung inhaltlich überzeugend (Paraphrase, Skalierungsfrage gemäß Systemprompt). Damit ist der von QN-12/B-15 geforderte Funktionstest erstmals tatsächlich erbracht, nicht nur behauptet.
+
 ## Was für die nächste Session offen ist
 
 1. **Task 6 — Parallel-Agents:** Sentiment-Check, Konsistenzcheck, QN-Selbstprüfung sind konzipiert (siehe Agenten-Map), aber noch nicht in `bot.py` eingebaut. Die Signal-Scanner-Logik existiert bereits als TypeScript (`lib/signal-scanner.ts`) für den Textmodus, aber noch nicht als Python-Äquivalent für die Voice-Pipeline.
 2. **Task 7 — Phasentracking:** Die Tabelle `phase_signals` existiert (Migration 003), wird aber noch von niemandem beschrieben oder gelesen.
-3. **Task 9 — Diese Dokumentation** ist hiermit erledigt; laufende Pflege bei weiteren Änderungen nicht vergessen (siehe Dokumentationsstandard).
-4. **Task 10 — End-to-End-Test im Browser:** Noch nicht durchgeführt. Das ist der wichtigste nächste Schritt — bislang wurde nur der Import/Build/Deploy verifiziert, nicht ein tatsächliches Gespräch. Insbesondere zu prüfen: funktioniert `stop_secs=2.0` im echten Gebrauch, kommt Audio in beiden Richtungen an, landen Nachrichten korrekt in Supabase.
-5. **Bekannte Lücke, im Code als TODO markiert:** Der Text→Voice-Übergabe-Mechanismus (`priorMessages`) wird von der Next.js-Seite an den Agent durchgereicht, aber `bot.py` lädt ihn noch nicht in den `LLMContext` vor — ein Moduswechsel mitten in der Session verliert aktuell den bisherigen Gesprächskontext auf der Voice-Seite.
-6. **Anthropic-Datenresidenz** für den DSGVO-Teil der Voice-Architektur wurde nicht geprüft (nur Deepgram und Pipecat-Region).
+3. **Bekannte Lücke, im Code als TODO markiert:** Der Text→Voice-Übergabe-Mechanismus (`priorMessages`) wird von der Next.js-Seite an den Agent durchgereicht, aber `bot.py` lädt ihn noch nicht in den `LLMContext` vor — ein Moduswechsel mitten in der Session verliert aktuell den bisherigen Gesprächskontext auf der Voice-Seite.
+4. **Anthropic-Datenresidenz** für den DSGVO-Teil der Voice-Architektur wurde nicht geprüft (nur Deepgram und Pipecat-Region).
+5. **Altes Supabase-Projekt/Resend-Setup:** Nutzer plante, alte Projekte (Supabase `ejxiboybvwpeknghlvar`, altes Resend-Setup) zu löschen — Status bei Sessionbeginn prüfen und Backlog B-22 ggf. entsprechend abschließen.

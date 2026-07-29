@@ -198,13 +198,13 @@ Noch offen: Parallel-Agents (Sentiment/Konsistenz/QN-Prüfung), Phasentracking-L
 
 ### B-15 — QN-12 Gesprächsrhythmik formal in Qualitätsnormen aufnehmen
 **Priorität:** Hoch
-**Status:** Beschlossen, noch nicht eingetragen
+**Status:** Funktionstest bestanden (29. Juli 2026) — formale Eintragung in Qualitätsnormen-Dokument noch offen
 
 Das Schweige-Problem ist als Forschungsbefund dokumentiert und als QN-12 angekündigt. Die Norm muss noch formal in `qualitaetsnormen.md` eingetragen werden.
 
 Standard: Jede Voice-Komponente, die für diese Plattform evaluiert wird, muss nachweislich konfigurierbare oder deaktivierbare Turn Detection unterstützen. Die Konfigurierbarkeit muss durch Funktionstest verifiziert werden, nicht durch Herstellerdokumentation allein.
 
-*Bezug zu B-20:* Umgesetzt — Silero VAD (`stop_secs=2.0` statt Standard 0.2s) in `voice-agent/bot.py`, direkt im installierten Quellcode verifiziert. Siehe [11_voice-cascaded-umsetzung.md](11_voice-cascaded-umsetzung.md). Der von dieser Norm geforderte Funktionstest ("muss durch Funktionstest verifiziert werden") steht noch aus — Task 10 (End-to-End-Test).
+*Bezug zu B-20:* Umgesetzt — Silero VAD (`stop_secs=2.0` statt Standard 0.2s) in `voice-agent/bot.py`, direkt im installierten Quellcode verifiziert. Der von dieser Norm geforderte Funktionstest ("muss durch Funktionstest verifiziert werden") wurde am 29. Juli 2026 erbracht: mehrere Gesprächswechsel über echtes Mikrofon, `stop_secs=2.0` fühlte sich im Gebrauch angemessen an. Details: [11_voice-cascaded-umsetzung.md](11_voice-cascaded-umsetzung.md). Verbleibend offen: die formale Eintragung von QN-12 in ein eigenständiges Qualitätsnormen-Dokument (`qualitaetsnormen.md` existiert noch nicht als Datei).
 
 ---
 
