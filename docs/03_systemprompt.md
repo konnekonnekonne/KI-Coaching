@@ -31,6 +31,8 @@ Vor jeder Antwort prüft das Modell die Eingabe auf Krisensignale:
 
 Bei Krisensignalen: sofortiger Abbruch des Coaching-Prozesses, Empathieausdruck, Nennung konkreter Krisenressourcen (Telefonseelsorge: 0800 111 0 111), Beendigung der Session.
 
+**Seit B-05b nicht mehr nur Modell-Instruktion, sondern zusätzlich technisch erzwungen — und seit dem 29. Juli 2026 in einer zweiten, entscheidenden Dimension überarbeitet.** Siehe eigener Abschnitt „Grenzen kennen — von der Instruktion zur gelebten Praxis" unten; er gehört inhaltlich hierher, nicht nur ins Backlog, weil er eine zentrale Kompetenz professionellen Coachings unmittelbar in eine technische Entscheidung übersetzt.
+
 ### 3. Methodenkorpus (QN-01)
 Das vollständige INA CCW-Toolsystem (46 Werkzeuge) wird auf die für text-basiertes Einzelcoaching geeignete Teilmenge reduziert. Das Modell arbeitet ausschließlich mit diesen Werkzeugen — keine Improvisation außerhalb des Korpus.
 
@@ -70,15 +72,37 @@ Der Systemprompt enthält seit der Voice-Integration explizite Regeln für gespr
 - Du-Form durchgehend
 - Gesprächssprache ("Du hast gesagt…" statt "Sie erwähnten…")
 
-**Forschungsnotiz:** Das verwendete Sprachmodell (`gpt-realtime-2`) ist primär englischsprachig trainiert. Obwohl es korrektes Deutsch produziert, trägt die Stimme teilweise amerikanische Intonationsmuster. Dieser Effekt ist technisch nicht durch den Systemprompt steuerbar — er ist eine Eigenschaft des TTS-Layers (Stimme: `shimmer`), nicht des Sprachmodells. Er wird als bekannte Limitation dokumentiert.
+**Überholt seit der Migration zu Cascaded (siehe [10_architekturentscheidung-voice-cascaded.md](10_architekturentscheidung-voice-cascaded.md)):** Die ursprüngliche Forschungsnotiz zu amerikanischen Intonationsmustern bezog sich auf `gpt-realtime-2`/Stimme `shimmer` (OpenAI Realtime API). Seit Juli 2026 läuft Voice über Deepgram Aura-2 mit den explizit für Deutsch trainierten Stimmen `aura-2-aurelia-de` (weiblich) / `aura-2-fabian-de` (männlich) — das ursprünglich dokumentierte Problem besteht mit diesem Anbieter nicht mehr in derselben Form.
+
+---
+
+## Grenzen kennen — von der Instruktion zur gelebten Praxis (Juli 2026)
+
+Dieser Abschnitt ist bewusst ausführlicher als die anderen, weil er eine der zentralen fachlichen Anforderungen aus Kapitel 2 der Abschlussarbeit — dass ein Coach die eigenen Grenzen kennt und respektiert — direkt in eine überprüfbare technische Entscheidung übersetzt, und weil sich beim echten Testen zeigte, dass diese Anforderung zwei getrennte, gleichermaßen notwendige Dimensionen hat.
+
+**Die fachliche Ausgangslage.** Professionelles Coaching unterscheidet sich von Therapie nicht nur im Gegenstand (gesunde vs. behandlungsbedürftige Klientinnen), sondern auch in der Verantwortung, diese Grenze im eigenen Handeln zu erkennen und danach zu handeln. Der ICF Code of Ethics verpflichtet Coaches ausdrücklich dazu, Klientinnen bei Bedarf an geeignetere Fachpersonen zu verweisen, statt den eigenen Zuständigkeitsbereich zu überschreiten. Diese Kompetenz — "die eigenen Grenzen kennen" — ist damit kein Zusatz zum professionellen Coaching, sondern eine seiner Kernanforderungen, und sie war bereits vor der hier beschriebenen Überarbeitung als Anforderung im Systemprompt verankert (Abschnitt „Grenzen", QN-06–08; MIND-SAFE-Filter, QN-02/09).
+
+**Was beim Testen sichtbar wurde.** Die ursprüngliche technische Umsetzung erfüllte die Anforderung nur teilweise. Ein Nutzertest (29. Juli 2026, Voice-Modus) zeigte zwei unabhängige Probleme:
+
+1. **Ton:** Die deterministische Krisenantwort ("Ich bin dafür nicht der richtige Ansprechpartner... Diese Session endet hier") war sachlich-korrekt, aber bürokratisch formuliert — sie wirkte wie eine automatisierte Zurückweisung genau in dem Moment, in dem sich der Coachee verletzlich zeigte.
+2. **Timing:** Das System reagierte sofort, sobald ein Krisenbegriff in einem gerade abgeschlossenen Sprachsegment erkannt wurde — auch wenn der Coachee nur kurz innegehalten hatte, um weiterzusprechen. Für den Coachee fühlte sich das wie Unterbrechen an.
+
+Beide Probleme zusammen zeigen, dass "die eigenen Grenzen kennen" technisch aus zwei Anteilen besteht, die leicht miteinander verwechselt werden: **dass** eine Grenze erkannt und eingehalten wird (eine Zuverlässigkeitsfrage), und **wie** diese Grenze der betroffenen Person mitgeteilt wird (eine Beziehungsfrage). Ein System — wie ein Mensch — kann im ersten Punkt vollkommen zuverlässig sein und im zweiten trotzdem Schaden anrichten.
+
+**Die Lösung, architektonisch getrennt:**
+- Der *Auslöser* bleibt hart und deterministisch (`lib/signal-scanner.ts`, `voice-agent/signal_scanner.py`): Ein einmal erkanntes Krisensignal führt garantiert zu einer Reaktion, unabhängig vom Modellverhalten — das war bereits die Kernidee von B-05b und bleibt unverändert. Das adressiert weiterhin das in Kapitel 1 diskutierte RLHF-Konflikt-Problem: Sich auf das Modell allein zu verlassen, wäre nicht zuverlässig genug.
+- Der *Ton* wurde überarbeitet: Erst Anerkennung und Wärme, dann die Ressource, dann ein Abschluss, der nicht wie ein Abbruch klingt (voller Wortlaut in `docs/backlog.md`, B-05b).
+- Das *Timing* wurde überarbeitet, nur im Voice-Modus relevant: Statt sofort zu antworten, wartet das System nach Erkennung zusätzliche vier Sekunden. Spricht der Coachee in dieser Zeit weiter, wird das angehängt und die Wartezeit neu gestartet — die Reaktion kommt erst, wenn wirklich Ruhe eingekehrt ist. Damit wird aus einem einzigen, plötzlichen Ereignis ein Verhalten, das Raum lässt, ohne die Garantie aufzugeben, dass reagiert wird.
+
+Wichtig für die Einordnung in der Arbeit: **Weder der Ton- noch der Timing-Text wurden fachlich-klinisch geprüft.** Das ist eine offen benannte Lücke (siehe `docs/backlog.md`, B-05b), keine abgeschlossene Lösung — vertretbar im geschlossenen Forschungsrahmen, aber vor jeder Erweiterung über diesen Rahmen hinaus zwingend nachzuholen.
 
 ---
 
 ## Implementierung
 
-Der Systemprompt liegt in `lib/system-prompt.ts` und wird als Konstante in beide API-Routen importiert:
-- `/api/chat` — für Text-Sessions (Claude claude-opus-4-5)
-- `/api/voice/session` — für Voice-Sessions (gpt-realtime-2)
+Der Systemprompt liegt in `lib/system-prompt.ts` (Text- und Voice-Modus teilen sich denselben Inhalt; Voice hält in `voice-agent/system_prompt.py` bewusst ein manuell synchron gehaltenes Duplikat, da der Voice-Agent ein eigenständiger Python-Service ist) und wird als Konstante importiert in:
+- `app/api/chat/route.ts` — für Text-Sessions (Claude, Modell zentral in `lib/models.ts` definiert)
+- `voice-agent/bot.py` — für Voice-Sessions (Claude, Modell zentral in `voice-agent/models.py` definiert; Cascaded-Pipeline über Pipecat Cloud, siehe [10_architekturentscheidung-voice-cascaded.md](10_architekturentscheidung-voice-cascaded.md))
 
 Er ist versioniert (Git) und damit vollständig nachvollziehbar.
 
