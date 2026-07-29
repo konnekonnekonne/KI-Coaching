@@ -124,6 +124,18 @@ Im Dashboard ist "Zugriff auf Protokolle" als Feature geplant, aber nicht umgese
 
 ---
 
+### B-22 — Netlify zeigte auf falsches (altes) Supabase-Projekt
+**Priorität:** Hoch
+**Status:** Behoben (29. Juli 2026)
+
+Beim ersten End-to-End-Test der Cascaded-Voice-Architektur (Task 10) zeigte sich: `NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY` in Netlify zeigten weiterhin auf das alte Projekt `ejxiboybvwpeknghlvar.supabase.co`, obwohl die gesamte Migrations- und MCP-Arbeit dieser und der vorherigen Session bereits gegen das neue Projekt `rccugewhmscysohzewfw.supabase.co` lief (siehe B-21, B-09). Die Live-Seite hat demnach seit dem eigentlichen Projektwechsel durchgehend die alte Datenbank benutzt — Sessions wurden dort angelegt, während der neue Voice-Agent (mit korrekt konfiguriertem `SUPABASE_URL`-Secret) gegen das neue Projekt schrieb. Das führte zu einem Fremdschlüssel-Fehler beim Schreiben des Transkripts (`session_id` existierte nur im alten Projekt).
+
+Entdeckt durch Verifikation des tatsächlich im Client-Bundle ausgelieferten Supabase-Hosts (nicht nur durch Doku-Abgleich) — ein weiterer Beleg dafür, dass Live-Verifikation nötig ist, wo Dokumentation und Konfiguration auseinanderlaufen können (vgl. B-21).
+
+Behoben durch Aktualisierung der Netlify-Umgebungsvariablen auf das neue Projekt, gefolgt von einem erzwungenen Rebuild (`NEXT_PUBLIC_*`-Variablen werden zur Build-Zeit eingebacken, ein reines Speichern der Variable reicht nicht). Altes Projekt bleibt bestehen, ist aber von der Live-Seite aus nicht mehr referenziert — enthielt laut Stichprobe nur Sessions vom 8./9. Juni (vermutlich frühe Tests, keine bekannten produktiven Nutzerdaten).
+
+---
+
 ### B-21 — Migration 002 fehlte live, Onboarding defekt
 **Priorität:** Hoch
 **Status:** Behoben (Juli 2026)
