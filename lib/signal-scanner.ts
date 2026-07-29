@@ -42,15 +42,24 @@ export interface SignalScanResult {
 /**
  * Kanonischer Krisen-Antworttext (B-05b) — wird zurückgegeben, wenn der
  * deterministische Pre-Filter "akut" meldet, statt einen LLM-Call
- * auszuführen. Inhaltlich deckungsgleich mit der MIND-SAFE-Instruktion im
- * Systemprompt (lib/system-prompt.ts), aber hier fest verdrahtet, damit sie
+ * auszuführen. Inhaltlich an die MIND-SAFE-Instruktion im Systemprompt
+ * (lib/system-prompt.ts) angelehnt, aber hier fest verdrahtet, damit sie
  * unabhängig vom Modellverhalten garantiert ausgeliefert wird.
+ *
+ * Bewusst warm statt bürokratisch formuliert (Revision nach Nutzertest,
+ * Juli 2026, siehe docs/backlog.md B-05b): Die erste Fassung wirkte wie eine
+ * automatisierte Zurückweisung genau in dem Moment, in dem sich jemand
+ * verletzlich zeigt — das ist real erlebbar bei einem Fehlalarm des
+ * Wortlisten-Scanners genauso wie bei einer echten Krise. Diese Formulierung
+ * wurde nicht klinisch/fachlich gegengelesen — das bleibt eine offene
+ * Anforderung, bevor die Plattform über den geschlossenen Forschungsrahmen
+ * hinausgeht.
  */
 export const CRISIS_RESPONSE_TEXT =
-  'Was du gerade beschreibst, klingt sehr ernst — und das nehme ich ernst. ' +
-  'Ich bin dafür nicht der richtige Ansprechpartner. Bitte wende dich jetzt an Menschen, ' +
-  'die dir wirklich helfen können: Die Telefonseelsorge ist kostenlos und rund um die Uhr erreichbar ' +
-  'unter 0800 111 0 111. Diese Session endet hier.'
+  'Ich höre dich, und das, was du gerade sagst, ist wichtig. Danke, dass du es aussprichst. ' +
+  'Ich bin als KI-Coach nicht der richtige Ort dafür — aber es gibt Menschen, die genau jetzt für dich da sein können. ' +
+  'Die Telefonseelsorge erreichst du rund um die Uhr, kostenlos, unter 0800 111 0 111. Du musst da nicht alleine durch. ' +
+  'Ich pausiere unser Coaching an dieser Stelle — nicht, weil ich dich alleine lasse, sondern weil du gerade mehr brauchst, als ich dir geben kann.'
 
 const LEVEL_ORDER: RiskLevel[] = ['keine', 'niedrig', 'mittel', 'hoch', 'akut']
 

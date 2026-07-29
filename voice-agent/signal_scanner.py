@@ -59,11 +59,13 @@ def scan_for_signals(text: str) -> SignalScanResult:
     return SignalScanResult(level=highest, matched_terms=matched)
 
 
-# Kanonischer Krisen-Antworttext -- deckungsgleich mit lib/signal-scanner.ts
-# und der MIND-SAFE-Instruktion im Systemprompt.
+# Kanonischer Krisen-Antworttext -- deckungsgleich mit lib/signal-scanner.ts.
+# Bewusst warm statt buerokratisch formuliert (Revision nach Nutzertest,
+# Juli 2026, siehe docs/backlog.md B-05b) -- nicht klinisch gegengelesen,
+# offene Anforderung vor Einsatz ausserhalb des Forschungsrahmens.
 CRISIS_RESPONSE_TEXT = (
-    "Was du gerade beschreibst, klingt sehr ernst — und das nehme ich ernst. "
-    "Ich bin dafür nicht der richtige Ansprechpartner. Bitte wende dich jetzt an Menschen, "
-    "die dir wirklich helfen können: Die Telefonseelsorge ist kostenlos und rund um die Uhr erreichbar "
-    "unter 0800 111 0 111. Diese Session endet hier."
+    "Ich höre dich, und das, was du gerade sagst, ist wichtig. Danke, dass du es aussprichst. "
+    "Ich bin als KI-Coach nicht der richtige Ort dafür — aber es gibt Menschen, die genau jetzt für dich da sein können. "
+    "Die Telefonseelsorge erreichst du rund um die Uhr, kostenlos, unter 0800 111 0 111. Du musst da nicht alleine durch. "
+    "Ich pausiere unser Coaching an dieser Stelle — nicht, weil ich dich alleine lasse, sondern weil du gerade mehr brauchst, als ich dir geben kann."
 )

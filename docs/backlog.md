@@ -99,6 +99,8 @@ Das löst nicht das Problem subtiler Krisensignale, setzt aber eine harte Unterg
 
 **Umsetzung:** `app/api/chat/route.ts` (Text) und `voice-agent/bot.py::TranscriptWriter` (Voice) — dieselbe Wortliste/Logik in beiden Sprachen gespiegelt, unit-getestet (TS via `tsx`, Python via `uv run`).
 
+**Nachjustierung Ton (29. Juli 2026, nach Nutzertest):** Die erste Fassung des Krisentexts war sachlich-bürokratisch formuliert ("Ich bin dafür nicht der richtige Ansprechpartner... Diese Session endet hier") und wirkte im echten Test wie eine automatisierte Zurückweisung genau in dem Moment, in dem sich der Coachee verletzlich zeigt — nicht angemessen für jemanden in echter Krise, und genauso unangemessen bei einem Fehlalarm des Wortlisten-Scanners (z.B. jemand reflektiert über vergangene Suizidgedanken, ist aber aktuell nicht in Gefahr). Der deterministische Auslösemechanismus bleibt unverändert — nur die Formulierung wurde überarbeitet: erst Anerkennung/Wärme, dann die Ressource, dann ein Abschluss, der nicht wie ein Abbruch klingt. Wichtige offene Lücke: **Dieser Text wurde nicht fachlich/klinisch geprüft.** Bevor die Plattform über den geschlossenen Forschungsrahmen hinausgeht, sollte jemand mit Krisenintervention-Erfahrung (z.B. Telefonseelsorge-Schulungsstandards wie ASIST/QPR) die Formulierung gegenlesen.
+
 ---
 
 ### B-05c — Server-seitiger Session-State (Phasentracking)
