@@ -15,8 +15,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --locked --no-install-project --no-dev
 
-# Copy the application code (bot.py + die lokalen Module, die es importiert)
-COPY ./bot.py bot.py
-COPY ./system_prompt.py system_prompt.py
-COPY ./models.py models.py
-COPY ./supabase_client.py supabase_client.py
+# Alle lokalen Python-Module kopieren (nicht einzeln auflisten -- das hat
+# bereits zweimal zu ModuleNotFoundError bei neu hinzugefuegten Dateien
+# gefuehrt, siehe docs/11_voice-cascaded-umsetzung.md).
+COPY ./*.py ./
