@@ -161,6 +161,8 @@ Vorschlag für die UI bleibt: Ein einfacher Zwischenscreen vor dem eigentlichen 
 
 **Update 30. Juli 2026:** Ursprünglich formulierte/paraphrasierte KICO die Coachingfrage selbst in den Anker hinein (`set_anchor`). Seit der `request_anchor_input`-Erweiterung (siehe B-23) schreibt der Coachee die Frage stattdessen selbst in eine von KICO geöffnete leere Karte — methodisch näher an der physischen Praxis, wo der Coach die Karte hinlegt, aber nicht für den Coachee beschriftet.
 
+**Update 30. Juli 2026 (2):** Qualitätscheck ergänzt (`docs/rahmen.md`, Abschnitt 9, Synthese aus M2-Lösungsorientierung und einer externen, nicht-INA-CCW-Quelle zu Fixed-/Growth-Mindset). Bevor die Karte geöffnet wird, prüft KICO, ob die genannte Frage rückwärtsgewandt, extern attribuiert oder listend/passiv ist. Bewusste Rollengrenze (Nutzer-Korrektur): KICO schlägt dabei **keine eigene Formulierung vor** — das wäre Inhaltsexpertise, nicht Prozessbegleitung. Es stellt genau eine Prozessfrage, ob eine selbstwirksamere/zukunftsgerichtete Formulierung möglich wäre, und respektiert danach jede Entscheidung des Coachee, auch ein Festhalten an der ursprünglichen Frage.
+
 Der System-Prompt beschreibt die Coaching-Frage als "roten Faden", den KICO wörtlich zurückspiegelt und durch die Session trägt. Methodisch wäre es stärker, wenn die Frage auch visuell präsent bleibt: einmalig vom Coachee formuliert, dann fixiert sichtbar — im Text- **und** im Voice-Modus, nicht nur "am oberen Rand des Chat-Fensters".
 
 Umsetzung: Nach Erkennung der Coachingfrage (Pattern im KICO-Output oder explizites DB-Feld) wird sie aus dem Gesprächsverlauf extrahiert und als `sessions.coaching_question` gespeichert. Die Session-UI zeigt sie fixiert an — unabhängig vom Modus.

@@ -13,6 +13,8 @@
 - Handout M2, "Systemische Grundlagen des Coachings kennen, Kontext und Auftrag klären" (C02) — Systemtheorie, radikaler Konstruktivismus, Theorie U, 4-Phasen-Modell des Coachinggesprächs, systemische Fragekataloge, aktives Zuhören
 - Handout "Meine Rolle als Coach" (C03) — Selbstkonzepte des Coachs, Werte/Glaubenssätze, Tooleinsatz-Philosophie
 
+**Zusätzliche, nicht-zertifizierte Quelle** (Abschnitt 9): "Slides Coaching DE.pdf", ein Webinar-Deck des betrieblichen EAP-Anbieters Kyan Health zu Change & Resilienz — kein INA-CCW-Lehrmaterial, aus dem Ordner "Weitere Coaching Quellen". Nur die Fixed-/Growth-Mindset-Folie (nach Carol Dweck) wird herangezogen, explizit als externe Ergänzung gekennzeichnet, nicht als Zitat des zertifizierten Curriculums.
+
 Diese Datei ist wie `docs/tools.md` kuratiertes Rohmaterial für die spätere Abschlussarbeit (Kapitel 3), nicht die Arbeit selbst — siehe Notiz zur Arbeitsteilung in `docs/backlog.md` / Projektgedächtnis.
 
 ---
@@ -132,6 +134,21 @@ M2 führt zwei ergänzende lösungsorientierte Traditionen ein, die bereits impl
 - **Insoo Kim Berg, drei Leitsätze:** (1) Repariere nicht, was nicht kaputt ist. (2) Finde heraus, was gut funktioniert, und tue mehr davon. (3) Wenn etwas trotz vieler Anstrengungen nicht gut genug funktioniert, höre damit auf und versuche etwas Neues.
 
 **Konsequenz für KICO:** Diese drei Leitsätze sind kompakt genug, um als explizite Grundhaltung in den Systemprompt aufgenommen zu werden — sie begründen, warum KICO in der Vertiefungsphase aktiv nach Ausnahmen und bereits funktionierenden Ansätzen fragen soll, statt nur die Problem-Erzählung zu vertiefen.
+
+---
+
+## 9. Gute vs. schlechte Coachingfrage — Synthese, kein Quellenfund (30. Juli 2026)
+
+**Kein einzelnes Dokument im gesichteten Material enthält eine explizite Kriterienliste** für "gute" vs. "schlechte" Coachingfragen. Der folgende Abschnitt ist deshalb ausdrücklich als **eigene Synthese aus zwei getrennten Quellen** gekennzeichnet, nicht als Zitat:
+
+- **INA CCW / M2, Lösungsorientierung** (bereits in Abschnitt 8 dokumentiert): de Shazer ("solution talk creates solutions"), Insoo Kim Bergs drei Leitsätze. Betrifft dort die Gesprächsführung insgesamt, nicht namentlich die Formulierung der einen Coachingfrage.
+- **Kyan Health-Deck, Fixed vs. Growth Mindset** (Dweck, externe Quelle, siehe oben): Gegenüberstellung von vergangenheits-/defizitorientierter Sprache ("Ich kann das nicht", "Das übersteigt meine Fähigkeiten") und zukunfts-/selbstwirksamkeitsorientierter Sprache ("Ich werde das mit der Zeit verstehen", "Jeder Experte war mal ein Anfänger").
+
+**Verdichtetes Kriterium für KICO:** Eine Coachingfrage tendiert zur schwächeren Seite, wenn sie rückwärtsgewandt ist (fragt nach Ursachen statt nach Zielzustand — "Warum ist X passiert?"), external attribuiert (Verantwortung/Veränderung liegt bei einer dritten Person — "Warum ist mein Chef so?") oder listend/passiv ist (zählt Symptome auf, ohne einen Ansatzpunkt für eigenes Handeln zu benennen — "Was hemmt mich alles?"). Sie tendiert zur stärkeren Seite, wenn sie nach vorne gerichtet ist, beim eigenen Einflussbereich ansetzt und selbstwirksam formuliert ist ("Wie schaffe ich es, …?", "Was kann ich tun, damit …?").
+
+**Zentrale Grenze — bewusst eng gefasst nach Nutzer-Korrektur (30. Juli 2026):** KICO bewertet die Formulierung, schlägt aber **keine eigene Alternativformulierung vor**. Das würde die in Abschnitt 2 dokumentierte Rollengrenze verletzen ("Der Coach ist Prozessexperte, nicht Inhaltsexperte", "Du schlägst keine Formulierung vor"). Erkennt KICO eine rückwärtsgewandte/externale/listende Frage, stellt es ausschließlich eine **Prozessfrage**, die die Möglichkeit einer Neuformulierung eröffnet, z. B.: "Ich höre da eine Frage, die stark auf das schaut, was schwierig ist — gäbe es eine Möglichkeit, sie so zu stellen, dass sie nach vorne schaut, auf das, worauf du selbst Einfluss hast?" Die eigentliche Neuformulierung bleibt vollständig beim Coachee, wie bei der ursprünglichen Coachingfrage-Klärung selbst (Abschnitt 7). KICO drängt außerdem nicht auf eine "perfekte" Frage — ein Durchgang der Rückfrage reicht; entscheidet sich der Coachee bewusst für seine ursprüngliche Formulierung, wird diese respektiert, nicht wiederholt hinterfragt.
+
+**Konsequenz für KICO:** Der Qualitätscheck sitzt zwischen dem verbalen/schriftlichen Formulieren der Coachingfrage (Abschnitt 7) und dem Öffnen der `request_anchor_input`-Karte (siehe `docs/backlog.md`, B-23-Erweiterung) — die Karte wird erst geöffnet, nachdem eine Formulierung feststeht, mit der beide (Coachee, nach optionaler Rückfrage) arbeiten wollen.
 
 ---
 
