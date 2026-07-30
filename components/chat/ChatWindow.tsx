@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react'
 import { MessageBubble } from './MessageBubble'
 import { InputBar } from './InputBar'
 
@@ -17,7 +17,14 @@ interface ChatWindowProps {
   onMessagesChange?: (messages: Message[]) => void
 }
 
-export function ChatWindow({ sessionId, initialMessages = [], onMessagesChange }: ChatWindowProps) {
+export interface ChatWindowHandle {
+  sendMessage: (content: string) => void
+}
+
+export const ChatWindow = forwardRef<ChatWindowHandle, ChatWindowProps>(function ChatWindow(
+  { sessionId, initialMessages = [], onMessagesChange },
+  ref
+) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
@@ -102,6 +109,12 @@ export function ChatWindow({ sessionId, initialMessages = [], onMessagesChange }
     }
   }, [messages, sessionId])
 
+  // Erlaubt das programmatische Senden einer Nachricht von außerhalb (z. B.
+  // wenn der Coachee eine offene Anker-Karte ausfüllt, siehe SessionAnchors.tsx
+  // und SessionShell.tsx) -- fließt exakt wie normaler Chat-Input in Claudes
+  // Kontext ein.
+  useImperativeHandle(ref, () => ({ sendMessage: handleSend }), [handleSend])
+
   // Stream lesen und KICO-Antwort aufbauen
   async function readStream(response: Response, _userContent: string) {
     const reader = response.body?.getReader()
@@ -154,4 +167,4 @@ export function ChatWindow({ sessionId, initialMessages = [], onMessagesChange }
       <InputBar onSend={handleSend} disabled={isStreaming} />
     </div>
   )
-}
+})

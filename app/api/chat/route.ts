@@ -3,7 +3,12 @@ import { createClient } from '@/lib/supabase/server'
 import { SYSTEM_PROMPT } from '@/lib/system-prompt'
 import { COACHING_MODEL } from '@/lib/models'
 import { scanForSignals, CRISIS_RESPONSE_TEXT } from '@/lib/signal-scanner'
-import { SET_ANCHOR_TOOL, type AnchorToolInput } from '@/lib/anchors'
+import {
+  SET_ANCHOR_TOOL,
+  REQUEST_ANCHOR_INPUT_TOOL,
+  type AnchorToolInput,
+  type RequestAnchorInputToolInput,
+} from '@/lib/anchors'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -38,7 +43,7 @@ async function runConversationTurn(
       max_tokens: 1024,
       system: SYSTEM_PROMPT,
       messages,
-      tools: [SET_ANCHOR_TOOL],
+      tools: [SET_ANCHOR_TOOL, REQUEST_ANCHOR_INPUT_TOOL],
     })
 
     for await (const chunk of stream) {
@@ -70,11 +75,29 @@ async function runConversationTurn(
             label: input.label,
             kind: input.kind,
             value: input.value,
+            awaiting_input: false,
             updated_at: new Date().toISOString(),
           },
           { onConflict: 'session_id,key' }
         )
         toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: 'gespeichert' })
+      } else if (block.name === 'request_anchor_input' && sessionId) {
+        const input = block.input as RequestAnchorInputToolInput
+        await supabase.from('session_anchors').upsert(
+          {
+            session_id: sessionId,
+            user_id: userId,
+            key: input.key,
+            label: input.label,
+            kind: 'text',
+            value: null,
+            prompt: input.prompt,
+            awaiting_input: true,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'session_id,key' }
+        )
+        toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: 'Eingabekarte geöffnet' })
       } else {
         toolResults.push({
           type: 'tool_result',

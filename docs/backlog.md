@@ -133,6 +133,12 @@ Ohne dieses System bleiben B-01 (viele INA-CCW-Tools brauchen genau solche Artef
 
 **Noch offen (Mechanismus 1 — explizite Pause für strukturierte Bestätigung):** Ein UI-Element, das das Gespräch für eine bewusste Checkbox-/Slider-Eingabe pausiert, statt nur bereits Gesagtes zu erfassen. Wird gezielt bei B-17 (Auftrag-Bestätigung) gebaut, nicht hier vorweggenommen.
 
+**Erweiterung (Mechanismus 3 — Coachee schreibt selbst, 30. Juli 2026):** Diskussionsanlass war eine konkrete Coaching-Beobachtung: In der physischen Praxis schreibt der Coach bei Werkzeugen wie Logische Ebenen nicht selbst auf die Karte, die neben dem Coachee im Raum liegt — er legt nur die leere Karte hin und stellt die Aufforderung ("Welche Umwelt wäre günstig?"). Mechanismus 2 (oben) ließ KICO die Formulierung selbst übernehmen (`set_anchor`, KICO paraphrasiert und setzt den Wert) — das entspricht nicht diesem Rollenbild. Neu:
+- Migration 007: `session_anchors.value` nullable, plus `prompt text` und `awaiting_input boolean`.
+- Neues Tool `request_anchor_input(key, label, prompt)` (`lib/anchors.ts`, gespiegelt in `voice-agent/bot.py`/`supabase_client.py`) — KICO öffnet eine leere Karte mit einer Aufforderung; der COACHEE füllt sie. `SessionAnchors.tsx` rendert eine Karte als Eingabefeld statt fertigem Wert, solange `awaiting_input=true` und `value=null`.
+- Erster Anwendungsfall: die Coachingfrage (B-18) — KICO fragt weiterhin verbal danach (hört die Antwort normal mit, das Gespräch wartet nicht), öffnet aber zusätzlich die Karte, damit der Coachee sie in eigenen Worten festhält, statt dass KICO sie hineinschreibt.
+- **Bewusste Scope-Grenze:** Im Textmodus fließt die eingetippte Antwort sofort auch als normale Chat-Nachricht an Claude zurück (`ChatWindow`/`SessionShell`, per `ref`), reiht sich also nahtlos in den Gesprächskontext ein. Im Voice-Modus persistiert die Karte korrekt (dieselbe Komponente, dieselbe Tabelle), aber das Getippte fließt **nicht live** in den laufenden Pipecat-Kontext zurück — dafür bräuchte es eine Realtime-Bridge vom Supabase-Update in den laufenden Agent-Prozess, die hier bewusst noch nicht gebaut wurde (Aufwand/Nutzen für diesen ersten Durchstich nicht gerechtfertigt). Das ist unkritisch, weil KICO die Coachingfrage ohnehin schon über den Sprachkanal gehört hat — die Karte ist ein zusätzliches Artefakt, kein Gate für den Gesprächsfortschritt. Nächster Schritt für allgemeinere Werkzeuge (Logische Ebenen etc.), bei denen der Coachee etwas schreibt, das KICO noch NICHT anderweitig kennt: diese Bridge nachrüsten.
+
 **Aufwand:** Hoch — echte Session-UI-Architektur-Frage, betraf ChatWindow und VoiceSession gleichermaßen.
 
 ---
@@ -151,7 +157,9 @@ Vorschlag für die UI bleibt: Ein einfacher Zwischenscreen vor dem eigentlichen 
 
 ### B-18 — Coaching-Frage als persistenter Anker
 **Priorität:** Mittel (MVP, Teilmenge von B-23)
-**Status:** Umgesetzt (29. Juli 2026) — als erste konkrete Anwendung von B-23
+**Status:** Umgesetzt (29. Juli 2026), Autorenschaft korrigiert (30. Juli 2026)
+
+**Update 30. Juli 2026:** Ursprünglich formulierte/paraphrasierte KICO die Coachingfrage selbst in den Anker hinein (`set_anchor`). Seit der `request_anchor_input`-Erweiterung (siehe B-23) schreibt der Coachee die Frage stattdessen selbst in eine von KICO geöffnete leere Karte — methodisch näher an der physischen Praxis, wo der Coach die Karte hinlegt, aber nicht für den Coachee beschriftet.
 
 Der System-Prompt beschreibt die Coaching-Frage als "roten Faden", den KICO wörtlich zurückspiegelt und durch die Session trägt. Methodisch wäre es stärker, wenn die Frage auch visuell präsent bleibt: einmalig vom Coachee formuliert, dann fixiert sichtbar — im Text- **und** im Voice-Modus, nicht nur "am oberen Rand des Chat-Fensters".
 

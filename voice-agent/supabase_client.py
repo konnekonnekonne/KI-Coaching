@@ -57,6 +57,27 @@ def upsert_anchor(session_id: str, user_id: str, key: str, label: str, kind: str
             "label": label,
             "kind": kind,
             "value": value,
+            "awaiting_input": False,
+        },
+        on_conflict="session_id,key",
+    ).execute()
+
+
+def request_anchor_input(session_id: str, user_id: str, key: str, label: str, prompt: str) -> None:
+    """Oeffnet eine leere Anker-Karte, die der COACHEE selbst fuellt -- Erweiterung
+    von B-23 (29./30. Juli 2026, siehe lib/anchors.ts fuer die Text-Spiegelung
+    und docs/backlog.md fuer die Begruendung). Das Frontend rendert bei
+    awaiting_input=True/value=null ein Eingabefeld statt eines fertigen Werts."""
+    get_client().table("session_anchors").upsert(
+        {
+            "session_id": session_id,
+            "user_id": user_id,
+            "key": key,
+            "label": label,
+            "kind": "text",
+            "value": None,
+            "prompt": prompt,
+            "awaiting_input": True,
         },
         on_conflict="session_id,key",
     ).execute()

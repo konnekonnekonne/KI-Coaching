@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Mic, PhoneOff } from 'lucide-react'
-import { ChatWindow } from './ChatWindow'
+import { ChatWindow, type ChatWindowHandle } from './ChatWindow'
 import { VoiceSession } from './VoiceSession'
 import { SessionAnchors } from './SessionAnchors'
 import { BackgroundOperationsPanel } from './BackgroundOperationsPanel'
@@ -29,6 +29,7 @@ export function SessionShell({ sessionId, initialMessages }: SessionShellProps) 
   const [currentMessages, setCurrentMessages] = useState<Message[]>(initialMessages)
   const supabase = createClient()
   const router = useRouter()
+  const chatWindowRef = useRef<ChatWindowHandle>(null)
 
   // Initialer Mode: server und client starten identisch (kein sessionStorage im SSR)
   // → verhindert React-Hydration-Fehler #418
@@ -106,9 +107,13 @@ export function SessionShell({ sessionId, initialMessages }: SessionShellProps) 
             Session beenden
           </button>
         </div>
-        <SessionAnchors sessionId={sessionId} />
+        <SessionAnchors
+          sessionId={sessionId}
+          onAnchorFilled={(text) => chatWindowRef.current?.sendMessage(text)}
+        />
         <div className="flex-1 overflow-hidden">
           <ChatWindow
+            ref={chatWindowRef}
             sessionId={sessionId}
             initialMessages={chatMessages}
             onMessagesChange={setCurrentMessages}

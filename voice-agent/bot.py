@@ -48,7 +48,7 @@ from pipecat.workers.runner import WorkerRunner
 
 from system_prompt import SYSTEM_PROMPT
 from models import COACHING_MODEL, VOICE_WEIBLICH, VOICE_MAENNLICH
-from supabase_client import write_message, upsert_anchor
+from supabase_client import write_message, upsert_anchor, request_anchor_input
 from anthropic_fix import SafeAnthropicLLMService
 from signal_scanner import scan_for_signals, CRISIS_RESPONSE_TEXT
 
@@ -178,6 +178,56 @@ def make_set_anchor_handler(session_id: str, user_id: str):
     return handle_set_anchor
 
 
+# Erweiterung von B-23 (29./30. Juli 2026): manche Anker soll der COACHEE
+# selbst schreiben statt KICO -- allen voran die Coachingfrage (siehe
+# docs/rahmen.md, AZF). Identisch zu REQUEST_ANCHOR_INPUT_TOOL in
+# lib/anchors.ts. Der Handler kehrt sofort zurueck (kein Warten auf die
+# Coachee-Eingabe) -- das Gespraech laeuft ueber den normalen Audio-Kanal
+# unveraendert weiter, siehe docs/backlog.md B-23 fuer die bewusste Grenze:
+# die getippte Antwort selbst fliesst hier (noch) nicht live in den
+# laufenden LLM-Kontext zurueck, nur die Karte persistiert korrekt.
+REQUEST_ANCHOR_INPUT_SCHEMA = FunctionSchema(
+    name="request_anchor_input",
+    description=(
+        "Oeffnet eine leere, persistente Karte, die der COACHEE SELBST mit eigenem Text "
+        "fuellt -- im Unterschied zu set_anchor, wo KICO den Wert vorgibt. Nutze dies, wenn "
+        "es methodisch wichtig ist, dass der Coachee etwas in eigenen Worten festhaelt (z. B. "
+        "die Coachingfrage), statt dass KICO es fuer ihn paraphrasiert. Das Gespraech laeuft "
+        "normal weiter -- warte nicht auf das Ausfuellen der Karte, bevor du fortfaehrst."
+    ),
+    properties={
+        "key": {
+            "type": "string",
+            "description": "Stabiler Bezeichner, z. B. 'coaching_question'.",
+        },
+        "label": {
+            "type": "string",
+            "description": 'Kurzer, fuer den Coachee verstaendlicher Anzeigename, z. B. "Deine Coachingfrage".',
+        },
+        "prompt": {
+            "type": "string",
+            "description": (
+                "Konkrete Aufforderung an den Coachee, angezeigt ueber dem Eingabefeld, z. B. "
+                '"Schreib deine Frage fuer heute in einem Satz auf."'
+            ),
+        },
+    },
+    required=["key", "label", "prompt"],
+)
+
+
+def make_request_anchor_input_handler(session_id: str, user_id: str):
+    async def handle_request_anchor_input(params: FunctionCallParams) -> None:
+        args = params.arguments
+        request_anchor_input(
+            session_id, user_id,
+            key=args["key"], label=args["label"], prompt=args["prompt"],
+        )
+        await params.result_callback({"status": "Eingabekarte geoeffnet"})
+
+    return handle_request_anchor_input
+
+
 async def run_bot(transport: BaseTransport, runner_args: RunnerArguments) -> None:
     """Baut und startet die Pipeline fuer eine einzelne Voice-Session.
 
@@ -220,8 +270,11 @@ async def run_bot(transport: BaseTransport, runner_args: RunnerArguments) -> Non
         ),
     )
     llm.register_function("set_anchor", make_set_anchor_handler(session_id, user_id))
+    llm.register_function(
+        "request_anchor_input", make_request_anchor_input_handler(session_id, user_id)
+    )
 
-    context = LLMContext(tools=[SET_ANCHOR_SCHEMA])
+    context = LLMContext(tools=[SET_ANCHOR_SCHEMA, REQUEST_ANCHOR_INPUT_SCHEMA])
     user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
         context,
         user_params=LLMUserAggregatorParams(
