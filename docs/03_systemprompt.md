@@ -121,6 +121,22 @@ Wichtig für die Einordnung in der Arbeit: **Weder der Ton- noch der Timing-Text
 
 ---
 
+## Aktivierende Coachingfrage — Prozessverantwortung statt Inhaltsverantwortung (30. Juli 2026)
+
+Dieser Abschnitt dokumentiert eine zweite, kleinere Instanz derselben Grunddynamik wie „Grenzen kennen" oben — diesmal ausgelöst nicht durch eine Krisensituation, sondern durch eine reine Methodikfrage. Beide Fälle zusammen zeigen ein wiederkehrendes Muster im Umgang mit KICOs Rollenautorität: **die Grenze zwischen Prozessverantwortung (was KICO tun darf) und Inhaltsverantwortung (was allein dem Coachee gehört) wird nicht beim ersten Entwurf richtig gezogen, sondern erst durch eine Korrektur im Arbeiten sichtbar.**
+
+**Die fachliche Ausgangslage.** M2 ("Systemische Grundlagen des Coachings") verankert Lösungsorientierung als Grundhaltung: Fragen sollen auf den Zielzustand zielen, nicht auf die Ursache eines Problems; siehe `docs/rahmen.md`, Abschnitt 6–7. Eine zweite, nicht-zertifizierte Quelle (Kyan-Health-Webinar-Deck, Ordner „Weitere Coaching Quellen", `docs/rahmen.md` Abschnitt 9) illustriert dieselbe Grundbewegung an einem verwandten Konzept, dem Growth-Mindset-Sprachmuster nach Dweck: rückwärtsgewandte, passive Selbstaussagen ("Ich kann das nicht") lassen sich in zukunftsorientierte, selbstwirksame umformulieren ("Ich werde das mit der Zeit verstehen"). Aus der Kombination beider Quellen entstand ein Kriterium für die Coachingfrage selbst: rückwärtsgewandt (fragt nach Ursachen statt Zielzustand), extern attribuiert (Verantwortung liegt bei Dritten) oder listend/passiv (zählt Symptome, ohne eigenen Ansatzpunkt) vs. aktivierend, zukunftsorientiert, selbstwirksam formuliert.
+
+**Wichtig zur Einordnung dieses Kriteriums selbst:** Es ist keine wörtliche INA-CCW-Regel, sondern eine eigene Synthese aus einer zertifizierten Quelle (M2) und einer unzertifizierten Zusatzquelle (Kyan Health) — das muss bei einer Verwendung in der Abschlussarbeit offen benannt werden, nicht als geprüfter Fachstandard zitiert werden.
+
+**Was beim Bauen sichtbar wurde.** Der unmittelbare Auslöser war die parallel entstandene Entscheidung, dass der Coachee die Coachingfrage künftig selbst schriftlich festhält, statt dass KICO sie paraphrasiert (`request_anchor_input`, Mechanismus 3 in `docs/backlog.md` B-23). Das wirft sofort die Anschlussfrage auf: Was, wenn die selbst geschriebene Frage dem oben beschriebenen Kriterium *nicht* entspricht — z. B. „Warum ist mein Chef so?" statt einer zukunftsgerichteten Formulierung? Der erste Entwurf dieser Antwort (in diesem Gespräch vorgeschlagen) sah vor, dass KICO in diesem Fall eine bessere Formulierung anbietet. Die Nutzerkorrektur: Das würde die Rollengrenze aus Abschnitt 1 (Rollenklarheit) verletzen — ein Coach, der die Frage seines Coachees selbst umformuliert, übernimmt Inhaltsverantwortung, die ihm nicht zusteht. Das ist strukturell derselbe Fehler wie bei der ursprünglichen Krisenantwort oben: die Grenze wurde korrekt *erkannt*, aber im ersten Entwurf falsch *gehandhabt*.
+
+**Die Lösung.** Der Qualitätscheck erkennt die drei Muster (rückwärtsgewandt/extern/listend), schlägt aber **keine eigene Alternativformulierung vor**. Stattdessen stellt KICO genau eine Prozessfrage, die eine Neuformulierung *ermöglicht*, ohne den Inhalt vorzugeben (Wortlaut in `lib/system-prompt.ts`, Abschnitt „1c — Coachingfrage klären"). Entscheidet sich der Coachee danach trotzdem für die ursprüngliche Formulierung, wird das respektiert — kein zweiter Anlauf, keine Drängelei. Die Karte (`request_anchor_input`) öffnet sich erst nach diesem Check, nicht davor.
+
+**Der übergeordnete Punkt für die Arbeit:** Zusammen mit „Grenzen kennen" oben zeigt dieser Fall, dass Rollenklarheit (QN-04) kein einmal erledigter Prompt-Abschnitt ist, sondern bei jeder neuen Fähigkeit erneut geprüft werden muss — hier bei einer methodisch harmlos wirkenden Komfortfunktion (dem Coachee beim Formulieren helfen), nicht bei einem offensichtlich heiklen Thema wie einer Krise. Gerade das macht ihn als zweites Beispiel wertvoll: Rollenüberschreitung entsteht nicht nur in dramatischen Momenten, sondern leicht auch aus reinem Hilfsimpuls heraus.
+
+---
+
 ## Implementierung
 
 Der Systemprompt liegt in `lib/system-prompt.ts` (Text- und Voice-Modus teilen sich denselben Inhalt; Voice hält in `voice-agent/system_prompt.py` bewusst ein manuell synchron gehaltenes Duplikat, da der Voice-Agent ein eigenständiger Python-Service ist) und wird als Konstante importiert in:

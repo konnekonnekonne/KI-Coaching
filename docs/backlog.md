@@ -169,6 +169,12 @@ Umsetzung: Nach Erkennung der Coachingfrage (Pattern im KICO-Output oder explizi
 
 *Bezug zu B-23:* Dies ist der am konkretesten ausgearbeitete Einzelfall des allgemeinen Anker-Systems — beim Design von B-23 als erstes Referenzbeispiel nutzen.
 
+**Update 30. Juli 2026 (3) — offen aus Live-Test:** Zwei UI-Beobachtungen aus einem echten Testlauf (Screenshot, Textmodus), noch nicht behoben:
+1. Der Aufforderungstext der Karte ("...so wie du sie eben gesagt hast") legt nahe, der Coachee solle sich an das Gesagte *erinnern*. Methodisch falscher Rahmen: Schreiben führt oft zu einer neuen, ehrlicheren Formulierung als das gesprochene erste Anliegen — das Feld sollte zum Neu-Nachdenken einladen, nicht zum Wiederholen.
+2. KICO sagt zwar sinngemäß „nimm dir Zeit", stellt aber im selben Zug bereits Anschlussfragen zum Thema — das lenkt vom Formulieren ab. Solange die Karte offen ist (`awaiting_input=true` für `coaching_question`), sollte KICO abwarten, statt das Gespräch inhaltlich weiterzutreiben, außer der Coachee fragt selbst aktiv nach.
+
+Beides ist reine Prompt-/Timing-Politur, kein struktureller Fehler — zurückgestellt, nicht vergessen.
+
 ---
 
 ## Plattform / Features
