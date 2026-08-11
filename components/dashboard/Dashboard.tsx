@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { Button, Input, Logo } from '@/components/ui'
+import { Button, Input, Logo, SegmentedControl } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
 interface Session {
@@ -100,66 +99,6 @@ function getGreeting(firstName: string): { heading: string; sub: string } {
   }
 }
 
-// ── Preference-Zeile ────────────────────────────────────────────────────────
-
-function PreferenceRow({
-  optionA,
-  optionB,
-  active,
-  onToggle,
-}: {
-  optionA: string
-  optionB: string
-  active: 'a' | 'b'
-  onToggle: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      title={`Wechseln zu ${active === 'a' ? optionB : optionA}`}
-      className="group flex items-center gap-3 py-2.5 -mx-2 px-2 rounded-lg cursor-pointer w-full text-left hover:bg-primary/5 transition-colors duration-200"
-    >
-      {/* Option A */}
-      <span className="flex items-center gap-1.5">
-        {/* reservierter Platz für den Check */}
-        <span className="w-4 h-4 flex items-center justify-center flex-shrink-0">
-          {active === 'a' && (
-            <Check className="h-3.5 w-3.5 text-accent group-hover:text-primary transition-colors duration-300" />
-          )}
-        </span>
-        <span className={cn(
-          'caption transition-colors duration-200',
-          active === 'a'
-            ? 'text-kico-text font-medium'
-            : 'text-muted/40 group-hover:text-muted/70'
-        )}>
-          {optionA}
-        </span>
-      </span>
-
-      <span className="caption text-muted/25 select-none">·</span>
-
-      {/* Option B */}
-      <span className="flex items-center gap-1.5">
-        <span className="w-4 h-4 flex items-center justify-center flex-shrink-0">
-          {active === 'b' && (
-            <Check className="h-3.5 w-3.5 text-accent group-hover:text-primary transition-colors duration-300" />
-          )}
-        </span>
-        <span className={cn(
-          'caption transition-colors duration-200',
-          active === 'b'
-            ? 'text-kico-text font-medium'
-            : 'text-muted/40 group-hover:text-muted/70'
-        )}>
-          {optionB}
-        </span>
-      </span>
-    </button>
-  )
-}
-
 // ── Dashboard-Inhalt ────────────────────────────────────────────────────────
 
 function DashboardContent({
@@ -240,21 +179,21 @@ function DashboardContent({
         {/* Einladung zur Präferenz */}
         <p className="body-text text-muted mb-5">Mach es dir bequem.</p>
 
-        {/* Preference-Checklist */}
-        <div className="mb-10 space-y-0.5">
+        {/* Präferenzen */}
+        <div className="mb-10 flex flex-wrap gap-6">
           {themeMounted && (
-            <PreferenceRow
-              optionA="Hell"
-              optionB="Dunkel"
-              active={dark ? 'b' : 'a'}
-              onToggle={toggleTheme}
+            <SegmentedControl<'light' | 'dark'>
+              label="Erscheinungsbild"
+              options={[{ value: 'light', label: 'Hell' }, { value: 'dark', label: 'Dunkel' }]}
+              value={dark ? 'dark' : 'light'}
+              onChange={(v) => { if ((v === 'dark') !== dark) toggleTheme() }}
             />
           )}
-          <PreferenceRow
-            optionA="Schreiben"
-            optionB="Sprechen"
-            active={mode === 'text' ? 'a' : 'b'}
-            onToggle={() => setMode(mode === 'text' ? 'voice' : 'text')}
+          <SegmentedControl<'text' | 'voice'>
+            label="Modus"
+            options={[{ value: 'text', label: 'Schreiben' }, { value: 'voice', label: 'Sprechen' }]}
+            value={mode}
+            onChange={setMode}
           />
         </div>
 

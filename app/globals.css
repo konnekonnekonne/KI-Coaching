@@ -16,6 +16,7 @@
   --muted:           #64748B;
   --surface:         #FFFFFF;
   --border:          #D8E6DE;
+  --border-strong:   #7C9186;   /* Rahmen für Bedienelemente, deren Kontur selbst Information trägt (z.B. SegmentedControl) — >=3:1 gegen --bg, im Unterschied zu --border (rein dekorativ) */
 
   /* Signalfarben */
   --signal-amber:    #D97706;
@@ -39,6 +40,7 @@
   --bg:              #111816;
   --surface:         #1A2620;
   --border:          #2A3D33;
+  --border-strong:   #567064;
   --text:            #E2EDE6;
   --muted:           #7A9486;
   --primary:         #52B788;
@@ -63,11 +65,13 @@
   --color-bg:              var(--bg);
   --color-primary:         var(--primary);
   --color-primary-dark:    var(--primary-dark);
+  --color-on-primary:      var(--on-primary);
   --color-accent:          var(--accent);
   --color-kico-text:       var(--text);
   --color-muted:           var(--muted);
   --color-surface:         var(--surface);
   --color-border:          var(--border);
+  --color-border-strong:   var(--border-strong);
 
   --color-signal-amber:    var(--signal-amber);
   --color-signal-orange:   var(--signal-orange);

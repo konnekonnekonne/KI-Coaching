@@ -23,7 +23,9 @@ Das Design System basiert auf **CSS Custom Properties** als Single Source of Tru
 | `--text` | `#1B2E25` | `text-kico-text` | Fließtext, Headlines |
 | `--muted` | `#64748B` | `text-muted` | Hilfstexte, Labels, Metadaten |
 | `--surface` | `#FFFFFF` | `bg-surface` | Kartenoberflächen, Inputs |
-| `--border` | `#D8E6DE` | `border-border` | Rahmen, Trennlinien |
+| `--border` | `#D8E6DE` | `border-border` | Rahmen, Trennlinien (rein dekorativ) |
+| `--border-strong` | `#7C9186` | `border-border-strong` | Rahmen von Bedienelementen, deren Kontur selbst Information trägt (z. B. `SegmentedControl`) — mind. 3:1 Kontrast zu `--bg`, im Unterschied zu `--border` |
+| `--on-primary` | `#FFFFFF` | `text-on-primary` | Text auf `bg-primary`-Flächen (aktiver Zustand von `SegmentedControl`, Button-Text) |
 
 ### Signalfarben
 
@@ -166,6 +168,38 @@ import { Input } from '@/components/ui'
   error="Diese E-Mail ist bereits registriert."
 />
 ```
+
+---
+
+## SegmentedControl
+
+Für binäre oder kurze exklusive Auswahl (z. B. Hell/Dunkel, Schreiben/Sprechen). Ersetzt seit
+30. Juli 2026 das frühere Text-mit-Häkchen-Muster (`PreferenceRow`): dort war der Auswahlstatus
+ausschließlich über Deckkraft codiert (`text-muted/40`) und fiel in einem Live-Test durch
+(≈1,7:1 Kontrast, WCAG-Ziel 4,5:1). `SegmentedControl` zeigt den Zustand stattdessen über Fläche
+und Position — funktioniert auch ohne Farbwahrnehmung.
+
+```tsx
+import { SegmentedControl } from '@/components/ui'
+
+<SegmentedControl<'text' | 'voice'>
+  label="Modus"
+  options={[
+    { value: 'text', label: 'Schreiben' },
+    { value: 'voice', label: 'Sprechen' },
+  ]}
+  value={mode}
+  onChange={setMode}
+/>
+```
+
+Der generische Typ-Parameter (`<'text' | 'voice'>`) ist nötig, damit `onChange` exakt auf den
+State-Typ passt, statt auf `string` zu weiten — TypeScript kann die Literal-Typen aus dem
+`options`-Array sonst nicht automatisch ableiten.
+
+**Wann statt `Button`-Varianten:** Wenn die Auswahl dauerhaft sichtbar bleiben soll (kein
+Dropdown, kein Modal) und es sich um genau einen Zustand aus wenigen (2–4) klar benannten
+Optionen handelt — nicht für Aktionen (dafür `Button`).
 
 ---
 
