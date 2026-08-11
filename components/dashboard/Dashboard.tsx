@@ -17,13 +17,21 @@ interface DashboardProps {
   firstName: string | null
   sessions: Session[]
   userId: string
+  voiceGender: 'weiblich' | 'maennlich'
 }
 
-export function Dashboard({ firstName, sessions, userId }: DashboardProps) {
+export function Dashboard({ firstName, sessions, userId, voiceGender }: DashboardProps) {
   if (!firstName) {
     return <NameOnboarding userId={userId} />
   }
-  return <DashboardContent firstName={firstName} sessions={sessions} userId={userId} />
+  return (
+    <DashboardContent
+      firstName={firstName}
+      sessions={sessions}
+      userId={userId}
+      initialVoiceGender={voiceGender}
+    />
+  )
 }
 
 // ── Vorname-Onboarding ──────────────────────────────────────────────────────
@@ -105,16 +113,19 @@ function DashboardContent({
   firstName,
   sessions,
   userId,
+  initialVoiceGender,
 }: {
   firstName: string
   sessions: Session[]
   userId: string
+  initialVoiceGender: 'weiblich' | 'maennlich'
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [mode, setMode] = useState<'text' | 'voice'>('text')
   const [dark, setDark] = useState(false)
   const [themeMounted, setThemeMounted] = useState(false)
+  const [voiceGender, setVoiceGender] = useState<'weiblich' | 'maennlich'>(initialVoiceGender)
   // Begrüßung erst client-seitig berechnen — verhindert React-Hydration-Fehler #418
   // (Server-Timezone UTC ≠ Browser-Timezone des Coachees)
   const [greeting, setGreeting] = useState<{ heading: string; sub: string }>({
@@ -134,6 +145,11 @@ function DashboardContent({
     setDark(next)
     document.documentElement.classList.toggle('dark', next)
     localStorage.setItem('kico-theme', next ? 'dark' : 'light')
+  }
+
+  async function changeVoiceGender(next: 'weiblich' | 'maennlich') {
+    setVoiceGender(next)
+    await supabase.from('profiles').update({ voice_gender: next }).eq('id', userId)
   }
 
   // Leere Sessions nicht anzeigen
@@ -194,6 +210,12 @@ function DashboardContent({
             options={[{ value: 'text', label: 'Schreiben' }, { value: 'voice', label: 'Sprechen' }]}
             value={mode}
             onChange={setMode}
+          />
+          <SegmentedControl<'weiblich' | 'maennlich'>
+            label="Stimme"
+            options={[{ value: 'weiblich', label: 'Weiblich' }, { value: 'maennlich', label: 'Männlich' }]}
+            value={voiceGender}
+            onChange={changeVoiceGender}
           />
         </div>
 

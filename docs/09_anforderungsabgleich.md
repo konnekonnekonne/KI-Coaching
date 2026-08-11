@@ -1,6 +1,6 @@
 # 09 — Anforderungsabgleich: Kapitel 2 vs. Umsetzungsstand
 
-*Dokumentationsstand: Juli 2026*
+*Dokumentationsstand: 30. Juli 2026 — aktualisiert nach Cascaded-Migration, B-05b, Methodenkorpus/Rahmenmaterial, Session-Anchors*
 
 ---
 
@@ -44,7 +44,7 @@ Dieses Dokument stellt den in Kapitel 2 der Abschlussarbeit formulierten Anforde
 
 | Anforderung | Status | Umsetzung / Begründung |
 |---|:---:|---|
-| INA CCW-Methodenkorpus als verbindlicher Rahmen | ~ | Alle ~20 Werkzeuge sind im Prompt *benannt* (Prozessrahmen, Fragetechniken, Identität & Werte, Perspektive & Entscheidung, Abschluss). Sie sind aber nicht *beschrieben* — das Modell kennt Namen, nicht Anwendungslogik. Offen als Backlog B-01 (Werkzeugbeschreibungen) und B-02 (Auswahllogik, wann welches Tool). Ohne diese Beschreibungen fällt das Modell nachweislich auf generisches Coaching-Verhalten zurück. |
+| INA CCW-Methodenkorpus als verbindlicher Rahmen | ~ | `docs/tools.md` beschreibt ~30 Werkzeuge (Kurzprinzip, Trigger, Kernprozess, U-Modell-Phase, Visualisierungstyp); `docs/rahmen.md` ergänzt Sessioneinstieg, Auftragsklärung und Rolle des Coachs aus dem INA-CCW-Curriculum (M2, M6, C03). Der Systemprompt ist danach phasenweise neu aufgebaut. Verbleibend offen: Die Tool-Auswahllogik (B-02) ist ein "erster, noch grober Baustein" — kein server-seitiger Auswahlmechanismus, das Modell wählt weiterhin selbst aus der phasenweisen Liste. |
 | Keine Diagnose/Therapie/medizinische Empfehlung | ✓ | Rollenklarheit (QN-04) im Prompt: explizite Abgrenzung "kein Therapeut, kein Berater, kein Freund". |
 | Systemische Fragetechniken | ✓ | Sechs Varianten im Methodenkorpus benannt und im Fragehaltungs-Abschnitt operationalisiert. |
 | Umgang mit Widerstand/Intellektualisieren | ⬜ | Keine Instruktion im Prompt (Backlog B-05). |
@@ -55,7 +55,7 @@ Dieses Dokument stellt den in Kapitel 2 der Abschlussarbeit formulierten Anforde
 
 | Anforderung | Status | Umsetzung / Begründung |
 |---|:---:|---|
-| Krisenerkennung und -eskalation (MIND-SAFE) | ~ | Vollständig als Prompt-Instruktion umgesetzt (Krisenressourcen, sofortiger Abbruch). **Strukturelle Einschränkung:** Dies ist ausschließlich eine Instruktion — keine technische Sperre. Der in der Abschlussarbeit (Kapitel 3) und in Backlog B-05b geforderte deterministische Code-Filter *vor* dem LLM-Call (Wortlisten-Check, unabhängig vom Modellverhalten) existiert nicht. Damit hängt die Sicherheit vollständig an der Zuverlässigkeit des Modells — genau das RLHF-Konflikt-Problem, das Kapitel 1.2 der Arbeit als bekannte Limitation beschreibt, ist damit auf Plattformebene ungemindert vorhanden. |
+| Krisenerkennung und -eskalation (MIND-SAFE) | ✓ | Deterministischer Pre-Filter vor jedem LLM-Call (`lib/signal-scanner.ts`/`voice-agent/signal_scanner.py`, Wortlisten, kein Modell) — bei Level "akut" wird der LLM-Call übersprungen, die Krisenreaktion ist fest verdrahtet. Läuft identisch in Text- und Voice-Modus. Ton und Timing der Reaktion wurden nach einem Live-Test überarbeitet (Begründung inkl. Bezug zu professioneller Coaching-Ethik in `docs/03_systemprompt.md`, Abschnitt "Grenzen kennen"). Damit ist die Sicherheit nicht mehr ausschließlich modellabhängig — die in Kapitel 1.2 beschriebene RLHF-Konflikt-Problematik bleibt für das Modellverhalten selbst gültig, ist aber für diesen einen, kritischsten Fall durch die Architektur abgefangen. |
 | KI-Transparenz (keine Simulation menschlicher Präsenz) | ✓ | Im Prompt verankert (QN-06), keine dedizierte Prüfung, aber die Rollenklarheits-Instruktion deckt dies inhaltlich ab. Login-Seite zeigt zudem "Forschungsprototyp" als Subline — sichtbare Kennzeichnung. |
 | Keine übermäßige Bestätigung (Sycophancy) | ~ | Siehe 2.1.1 — Prompt-Instruktion vorhanden, kein Post-Check. |
 | Bias-Erkennung / konsistente Prinzipien unabhängig von Nutzer-Merkmalen | ⬜ | Keine gezielte Maßnahme, kein Test. Nicht evaluiert. |
@@ -66,10 +66,10 @@ Dieses Dokument stellt den in Kapitel 2 der Abschlussarbeit formulierten Anforde
 |---|:---:|---|
 | Datenminimierung, Zweckbindung | ✓ | Datenbankschema ist bewusst minimal (`profiles`, `sessions`, `messages`) — keine Pflicht-Demografiefelder, keine Analytics/Tracking-Pixel (siehe [02_datenbankschema.md](02_datenbankschema.md)). |
 | RLS / Zugriffsschutz | ✓ | Vollständig umgesetzt für alle drei Tabellen ([supabase/migrations/001_initial.sql](../supabase/migrations/001_initial.sql)). |
-| DSGVO-konforme Verarbeitung biometrischer Daten (Voice, Art. 9) | ⚠ | **Bewusste, dokumentierte Abweichung.** Audio läuft über OpenAI-Infrastruktur ohne garantierte EU-Datenspeicherung. Im Forschungsrahmen mit informierter Einwilligung vertretbar, für eine kommerzielle Plattform nicht ausreichend. Ausführlich begründet in [05_voice-architektur.md](05_voice-architektur.md), Abschnitt "Forschungsrahmen und Datenschutz". |
+| DSGVO-konforme Verarbeitung biometrischer Daten (Voice, Art. 9) | ~ | Teilweise verbessert seit der Cascaded-Migration: Deepgram (STT/TTS) läuft über `api.eu.deepgram.com`, Hosting über Pipecat Cloud in `eu-central` (Frankfurt). Offen bleibt Anthropics eigene Datenresidenz für die Voice-Pipeline — nicht geprüft. Für den Forschungsrahmen mit informierter Einwilligung vertretbar, für eine kommerzielle Weiterentwicklung zwingend zu klären (Backlog B-11). |
 | EU AI Act Art. 5 (Emotionsinferenz aus biometrischen Daten) | ✓ | Dieser Anforderung wird durch eine Auswahlentscheidung entsprochen, nicht durch technische Kontrolle: Hume EVI wurde explizit deshalb ausgeschlossen (Entscheidungslog in [05_voice-architektur.md](05_voice-architektur.md)). |
 | Löschkonzept / Datenexport | ⬜ | Nicht umgesetzt. Nachrichten werden dauerhaft gespeichert, eine Löschfunktion nach Zeitraum ist als Zukunftsfeature vorgesehen ([02_datenbankschema.md](02_datenbankschema.md)), aber nicht terminiert. |
-| Einwilligungsmanagement | ⬜ | Kein Consent-Screen in der UI. Der in Backlog B-17 beschriebene Auftrags-Screen ("Der Auftrag (A) wurde bereits durch die Benutzeroberfläche eingeholt") ist im Systemprompt vorausgesetzt, aber die UI dafür existiert nicht — KICO startet direkt mit der Zielfrage, ohne dass eine bewusste Einwilligung eingeholt wurde. |
+| Einwilligungsmanagement | ⬜ | Kein Consent-Screen in der UI (Backlog B-17, unverändert offen). Die zugrunde liegende Annahme wurde jedoch korrigiert: `docs/rahmen.md` zeigt, dass die *coaching-fachliche* Kontextklärung ohnehin dialogisch in Phase 1a des Gesprächs gehört, nicht in eine vorgelagerte UI — nur die *organisatorische* Einwilligung (wer, warum, welcher Rahmen) bleibt ein echter UI-Fall und ist weiterhin ungebaut. |
 
 ## 2.X.5 Funktionale Anforderungen
 
@@ -80,6 +80,7 @@ Dieses Dokument stellt den in Kapitel 2 der Abschlussarbeit formulierten Anforde
 | Mitschrift / Protokollansicht | ⬜ | Rohtranskript wird gespeichert, aber keine Read-only-Ansicht dafür (Backlog B-08). |
 | Zieldefinition, Fortschrittskontrolle über Sessions | ⬜ | Nicht umgesetzt — hängt an Memory-Architektur (siehe Ebene 3/4 unten). |
 | Vorname-Onboarding | ✓ | Einmalige Abfrage beim ersten Login ([components/dashboard/Dashboard.tsx](../components/dashboard/Dashboard.tsx)). |
+| Persistente Session-Artefakte (z. B. Coachingfrage) | ✓ | `session_anchors`-Tabelle + zwei Tool-Mechanismen: `set_anchor` (KICO legt einen Wert fest) und `request_anchor_input` (KICO öffnet eine leere Karte, der Coachee füllt sie selbst — methodisch näher an physischer Coaching-Praxis als eine vom Modell paraphrasierte Zusammenfassung). Läuft identisch in Text- und Voice-Modus, live per Supabase Realtime. Kein Anforderungspunkt aus Kapitel 2 benennt das explizit — ergänzt "Berücksichtigung des bisherigen Gesprächsverlaufs" (2.1.1) um eine sichtbare, coachee-autorierte Komponente. |
 
 ## 2.6 Nichtfunktionale Anforderungen
 
@@ -96,7 +97,7 @@ Dieses Dokument stellt den in Kapitel 2 der Abschlussarbeit formulierten Anforde
 
 | Anforderung | Status | Umsetzung / Begründung |
 |---|:---:|---|
-| Kein clientseitiger API-Key | ✓ | Anthropic- und OpenAI-Keys verlassen den Server nie; Voice nutzt Ephemeral Keys für WebRTC. |
+| Kein clientseitiger API-Key | ✓ | Anthropic-, Deepgram- und Pipecat-Secrets verlassen den Server/die Pipecat-Cloud-Secret-Verwaltung nie; der Client erhält ausschließlich einen scoped `PIPECAT_API_KEY` (öffentlicher Schlüssel, `pk_...`) zum Verbindungsaufbau. |
 | TLS, sichere Authentifizierung | ✓ | Netlify (TLS), Supabase Auth mit OTP statt Passwort (kein Passwort-Diebstahlrisiko). |
 | Server Components für sensible Routen | ✓ | `/session` und `/session/[id]` sind React Server Components mit serverseitiger Auth-Prüfung. |
 
@@ -111,17 +112,11 @@ Dieses Dokument stellt den in Kapitel 2 der Abschlussarbeit formulierten Anforde
 
 ## Voice-spezifischer Abgleich: QN-12 (Gesprächsrhythmik)
 
-> **Update Juli 2026:** Die Analyse in diesem Abschnitt bezieht sich auf die zum Zeitpunkt der Erstellung implementierte Push-to-Talk-Lösung. Im Anschluss wurde entschieden, die Voice-Architektur grundsätzlich von Speech-to-Speech auf Cascaded umzustellen — Begründung und Kontext in [10_architekturentscheidung-voice-cascaded.md](10_architekturentscheidung-voice-cascaded.md). Die folgende Einordnung bleibt als Momentaufnahme der Umsetzung zum Zeitpunkt vor dieser Entscheidung gültig, beschreibt aber nicht mehr den aktuellen Planungsstand.
+**Aktueller Stand (Cascaded-Architektur, live getestet 29. Juli 2026):** Automatisches, konfigurierbares Turn-Taking über Silero VAD (`voice-agent/bot.py`, Parameter `stop_secs = 2.0` statt Standardwert 0.2). Kein Push-to-Talk mehr nötig — der Coachee spricht frei, Denkpausen bis 2 Sekunden werden nicht als Gesprächsende gewertet. Damit ist QN-12 erstmals durch einen echten Funktionstest belegt, nicht nur behauptet (Details in [11_voice-cascaded-umsetzung.md](11_voice-cascaded-umsetzung.md)).
 
-Dieser Abschnitt verdient eine gesonderte Behandlung, weil sich der Umsetzungsstand seit `08_kapitel-schweige-problem.md` faktisch verändert hat, ohne dass die bestehende Dokumentation das nachvollzieht.
+**Kurz zur Einordnung, warum dieser Weg gewählt wurde:** Die ursprüngliche Speech-to-Speech-Architektur (OpenAI `gpt-realtime-2`) bot keinen konfigurierbaren Zugriff auf die Turn-Detection — jede getestete Konfiguration scheiterte, siehe [08_kapitel-schweige-problem.md](08_kapitel-schweige-problem.md). Die Cascaded-Architektur löst das nicht, weil Turn-Detection dort grundsätzlich anders funktioniert, sondern weil sie eine austauschbare, frei konfigurierbare Komponente (Silero VAD) an die Stelle einer geschlossenen Anbieter-Blackbox setzt. Der dort dokumentierte *feldweite* Befund — aktuelle Sprach-KI ist strukturell auf Gesprächsfluss statt Gesprächsraum optimiert — bleibt als Forschungserkenntnis unabhängig davon gültig; für diese Plattform ist er durch die Architekturwahl umgangen, nicht aufgelöst.
 
-**Ausgangslage laut Doku:** `08_kapitel-schweige-problem.md` dokumentiert drei getestete Konfigurationspfade für `turn_detection` auf `gpt-realtime-2` (alle gescheitert) und schließt: *"Einen vierten Pfad gibt es nicht."* Die empfohlene Konsequenz war ein rein methodischer Umgang mit dem Limit (phasenbezogener Voice-Einsatz, Transparenz), nicht eine technische Lösung.
-
-**Tatsächlicher Code-Stand:** [components/chat/VoiceSession.tsx](../components/chat/VoiceSession.tsx) implementiert **kein VAD-basiertes Turn-Taking mehr**, sondern manuelles Push-to-Talk: Das Mikrofon-Audiotrack ist standardmäßig deaktiviert (`enabled = false`), der Coachee öffnet es per Klick, spricht, und schließt es per Klick wieder — erst dann werden `input_audio_buffer.commit` und `response.create` explizit gesendet. Da kein kontinuierlicher Audiostream an das Modell geht, hat automatische Turn-Detection nichts zu interpretieren; Denkpausen innerhalb eines geöffneten Mikrofonfensters werden nie als Gesprächsende missverstanden.
-
-**Einordnung — kein vierter Konfigurationspfad, sondern eine Umgehung:** Dies löst das in Kapitel 3 der Abschlussarbeit beschriebene Problem nicht auf der Ebene der Turn-Detection-Konfiguration (die bleibt unkonfigurierbar), sondern durch einen Architekturwechsel, der Turn-Detection für diesen Anwendungsfall überflüssig macht. Das erfüllt den Kern von QN-12 (Kontrolle über den Gesprächsrhythmus liegt beim Coachee, nicht beim Modell) — aber um den Preis, dass die in `docs/05_voice-architektur.md` ursprünglich formulierte Motivation für Voice ("sprachliche Spontaneität ... ohne Kompression") teilweise unterlaufen wird: Der Coachee muss jede Sprechabsicht durch einen expliziten Mikrofon-Klick markieren, bevor er sprechen kann — ein sprunghafteres Interaktionsmodell als freies Gespräch, aber eines, das dem Coachee statt dem Modell die Kontrolle über den Zeitpunkt gibt.
-
-**Konsequenz für diese Dokumentation:** `docs/05_voice-architektur.md` und `docs/08_kapitel-schweige-problem.md` beschreiben beide noch die zuvor evaluierte, verworfene Semantic-VAD-Konfiguration (`silence_duration_ms: 1800`, `threshold: 0.8`) als wären sie die aktuelle Zielarchitektur. Das ist bereits in Backlog B-16 als Lücke vermerkt. Dieser Abgleich bestätigt zusätzlich: Es fehlt nicht nur die Synchronisation der Parameter-Werte, sondern die Dokumentation des grundsätzlichen Architekturwechsels von VAD-basiertem zu PTT-basiertem Turn-Taking. Empfehlung: `05_voice-architektur.md` (Abschnitt "Semantic VAD") und `08_kapitel-schweige-problem.md` (Abschnitt 8, "Konsequenzen für diese Plattform") um die PTT-Lösung als tatsächlich umgesetzte Antwort auf QN-12 ergänzen, bei gleichzeitiger Klarstellung, dass das übergeordnete Feldproblem (Abschnitt 9 der Arbeit) davon unberührt bleibt — PTT ist eine plattformspezifische Umgehung, keine Lösung des strukturellen Widerspruchs zwischen Gesprächsfluss-Optimierung und Coaching-Gesprächsraum.
+**Für die Dokumentation:** `docs/05_voice-architektur.md` und `docs/08_kapitel-schweige-problem.md` beschreiben noch die inzwischen verworfene Speech-to-Speech-Zwischenlösung (Semantic VAD, dann Push-to-Talk) und sind damit historisches Material, kein aktueller Zielzustand (Backlog B-16).
 
 ---
 
@@ -129,10 +124,10 @@ Dieser Abschnitt verdient eine gesonderte Behandlung, weil sich der Umsetzungsst
 
 Priorisiert nach Auswirkung auf die Kernthese "Methode vor Modell":
 
-1. **Kein deterministischer Sicherheits-Pre-Filter** (B-05b) — MIND-SAFE ist vollständig modellabhängig, das RLHF-Konflikt-Problem aus Kapitel 1 der Arbeit ist auf Plattformebene ungemindert vorhanden.
-2. **Keine Memory-Architektur** (B-12, B-13) — "Kontext statt Sitzung" ist ein zentrales Architekturprinzip der Arbeit, aber technisch nicht existent. Jede Session ist faktisch eigenständig.
-3. **Werkzeugbeschreibungen und Auswahllogik fehlen** (B-01, B-02) — der Methodenkorpus ist benannt, nicht operationalisiert. Größtes Risiko für Rückfall in generisches Coaching-Verhalten.
-4. **Kein Server-seitiges Phasentracking** (B-05c) — Prozessverantwortung liegt vollständig beim Modell, nicht bei einer verlässlichen Datenstruktur.
-5. **Voice/DSGVO-Gap** (⚠, strukturell) — im Forschungsrahmen akzeptiert, für jede Weiterentwicklung über den Forschungsrahmen hinaus zwingend zu lösen.
+1. **Keine Memory-Architektur** (B-12, B-13) — "Kontext statt Sitzung" ist ein zentrales Architekturprinzip der Arbeit, aber technisch nicht existent. Jede Session ist faktisch eigenständig. Größte verbleibende Lücke.
+2. **Kein server-seitiges Phasentracking** (B-05c) — Prozessverantwortung liegt vollständig beim Modell, nicht bei einer verlässlichen Datenstruktur.
+3. **Tool-Auswahllogik nur grob umgesetzt** (B-02) — der Methodenkorpus ist inzwischen beschrieben (`docs/tools.md`), die Auswahl im Gespräch bleibt aber Modellermessen, kein server-seitiger Mechanismus.
+4. **Voice/DSGVO-Gap, reduziert** (~, strukturell) — Deepgram/Pipecat laufen in der EU, Anthropics Datenresidenz ist ungeprüft. Für den Forschungsrahmen akzeptabel, für jede Weiterentwicklung zu klären.
+5. **Kein Einwilligungs-/Consent-Screen** (B-17) — organisatorische Auftragsklärung fehlt weiterhin als UI-Baustein.
 
-Diese fünf Punkte sind der wahrscheinlichste Kern des Abschnitts "wo den Anforderungen aus technischer Limitierung nicht entsprochen werden konnte" im finalen Kapitel 3 — mit der Einschränkung, dass 1–4 keine technischen Grenzen im engeren Sinne sind, sondern schlicht noch nicht gebaute, aber baubare Bausteine. Nur Punkt 5 und das Schweige-Problem (siehe oben) sind tatsächliche Grenzen des aktuellen Technologiestands.
+**Nicht mehr auf dieser Liste:** Der deterministische Sicherheits-Pre-Filter (B-05b) ist umgesetzt und getestet — vormals Punkt 1 dieser Liste. Das zeigt, dass die verbleibenden Punkte 1–3 keine technischen Grenzen im engeren Sinne sind, sondern noch nicht gebaute, aber baubare Bausteine, während 4 und das Schweige-Problem (siehe oben) tatsächliche Grenzen des aktuellen Technologiestands bzw. echte regulatorische Fragen sind.

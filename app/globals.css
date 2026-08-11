@@ -104,64 +104,75 @@ body {
 /* ============================================================
    TYPOGRAFIE-UTILITIES
    Nutzung: className="heading-1" oder "body-text"
+
+   In @layer components, bewusst NICHT unlayered: Tailwind v4 lässt
+   jede unlayered CSS-Regel jede Utility-Klasse schlagen, unabhängig von
+   Reihenfolge/Spezifität. Ohne dieses @layer überschrieb z.B. .captions
+   fest codiertes color:var(--muted) die Utility-Klasse text-on-primary,
+   sobald beide auf demselben Element standen (sichtbar geworden als
+   grauer statt weißer Text auf dem aktiven SegmentedControl-Segment,
+   Live-Test 30. Juli 2026). Mit @layer components konkurriert diese
+   Regel korrekt gegen @layer utilities und verliert wie vorgesehen.
    ============================================================ */
 
-/* Sehr großer Display-Text für Begrüßungen und Einladungen */
-.display {
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-size: clamp(2.75rem, 7vw, 5.5rem);
-  font-weight: 300;
-  line-height: 1.05;
-  letter-spacing: -0.02em;
-}
+@layer components {
+  /* Sehr großer Display-Text für Begrüßungen und Einladungen */
+  .display {
+    font-family: var(--font-fraunces), Georgia, serif;
+    font-size: clamp(2.75rem, 7vw, 5.5rem);
+    font-weight: 300;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
 
-.heading-1 {
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-size: clamp(2rem, 5vw, 3rem);
-  font-weight: 600;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  color: var(--text);
-}
+  .heading-1 {
+    font-family: var(--font-fraunces), Georgia, serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
 
-.heading-2 {
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-size: clamp(1.5rem, 3vw, 2rem);
-  font-weight: 400;
-  line-height: 1.2;
-  color: var(--text);
-}
+  .heading-2 {
+    font-family: var(--font-fraunces), Georgia, serif;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 400;
+    line-height: 1.2;
+    color: var(--text);
+  }
 
-.heading-3 {
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-size: 1.375rem;
-  font-weight: 600;
-  line-height: 1.3;
-  color: var(--text);
-}
+  .heading-3 {
+    font-family: var(--font-fraunces), Georgia, serif;
+    font-size: 1.375rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--text);
+  }
 
-.body-text {
-  font-family: var(--font-inter), system-ui, sans-serif;
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.65;
-}
+  .body-text {
+    font-family: var(--font-inter), system-ui, sans-serif;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.65;
+  }
 
-.caption {
-  font-family: var(--font-inter), system-ui, sans-serif;
-  font-size: 0.8125rem;
-  font-weight: 400;
-  line-height: 1.5;
-  color: var(--muted);
-}
+  .caption {
+    font-family: var(--font-inter), system-ui, sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--muted);
+  }
 
-.label-text {
-  font-family: var(--font-inter), system-ui, sans-serif;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
+  .label-text {
+    font-family: var(--font-inter), system-ui, sans-serif;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
 }
 
 /* ============================================================

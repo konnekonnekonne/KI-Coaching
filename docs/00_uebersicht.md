@@ -27,6 +27,9 @@ Die Dokumentation wächst iterativ mit der Plattform und spiegelt den tatsächli
 | [09_anforderungsabgleich.md](09_anforderungsabgleich.md) | Abgleich Anforderungskatalog (Kapitel 2 Abschlussarbeit) vs. Umsetzungsstand — Vorarbeit für Kapitel 3 |
 | [10_architekturentscheidung-voice-cascaded.md](10_architekturentscheidung-voice-cascaded.md) | Entscheidung: Wechsel von Speech-to-Speech zu Cascaded Voice-Architektur — Kontext und Begründung |
 | [11_voice-cascaded-umsetzung.md](11_voice-cascaded-umsetzung.md) | Umsetzung der Cascaded-Architektur: Agenten-Map, technische Stolpersteine, Betriebsdetails, offene Punkte |
+| [tools.md](tools.md) | Methodenkorpus: ~30 INA-CCW-Werkzeuge mit Prinzip, Trigger, Kernprozess, U-Modell-Phase, Visualisierungstyp |
+| [rahmen.md](rahmen.md) | Sessioneinstieg, Auftragsklärung, Coachingfrage, Rolle des Coachs — Rahmenmaterial aus dem INA-CCW-Curriculum |
+| [backlog.md](backlog.md) | Laufende Aufgabenliste: offene Lücken, Priorisierung, Status je Punkt |
 
 ---
 
@@ -38,18 +41,17 @@ Die Dokumentation wächst iterativ mit der Plattform und spiegelt den tatsächli
 | Domain | kico.pro |
 | Repository | github.com/konnekonnekonne/KI-Coaching |
 | Methodische Grundlage | INA CCW-Curriculum (ECA-zertifiziert) |
-| KI-Modell Text | Anthropic Claude (claude-opus-4-5) |
-| KI-Modell Voice | OpenAI gpt-realtime-2 (zuletzt implementiert) — Wechsel zu Cascaded-Architektur (Claude) beschlossen, Umsetzung ausstehend, siehe [10_architekturentscheidung-voice-cascaded.md](10_architekturentscheidung-voice-cascaded.md) |
-| Voice-Architektur | WebRTC mit Ephemeral Key (GA, seit Mai 2026) |
+| KI-Modell Text & Voice | Anthropic Claude (claude-sonnet-5), einheitlich für beide Modi seit der Cascaded-Migration |
+| Voice-Architektur | Cascaded: Deepgram STT/TTS (EU-Endpoint) → Claude → Deepgram TTS, gehostet auf Pipecat Cloud (Region eu-central/Frankfurt). Siehe [10_architekturentscheidung-voice-cascaded.md](10_architekturentscheidung-voice-cascaded.md) und [11_voice-cascaded-umsetzung.md](11_voice-cascaded-umsetzung.md) |
 | Zielgruppe | Einzelpersonen im beruflichen Kontext (Forschungsrahmen) |
 | Sprache der Plattform | Deutsch |
-| Dokumentationsstand | Juni 2026 |
+| Dokumentationsstand | 30. Juli 2026 |
 
 ---
 
 ## Bauweise
 
-Die Plattform wurde in direkter Zusammenarbeit zwischen der Autorin und Claude (Anthropic) entwickelt. Alle Architekturentscheidungen wurden gemeinsam besprochen und dokumentiert. Der Quellcode ist im Repository öffentlich einsehbar und spiegelt die in dieser Dokumentation beschriebenen Prinzipien direkt wider.
+Die Plattform wurde von Henrike Thomsen und Konstantin Escher in direkter Zusammenarbeit mit Claude (Anthropic) entwickelt. Alle Architekturentscheidungen wurden gemeinsam besprochen und dokumentiert. Der Quellcode ist im Repository öffentlich einsehbar und spiegelt die in dieser Dokumentation beschriebenen Prinzipien direkt wider.
 
 ---
 

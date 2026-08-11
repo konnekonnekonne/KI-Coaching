@@ -180,12 +180,22 @@ export async function POST(request: Request) {
 
     // Begrüßung: leere History, Claude öffnet das Gespräch proaktiv
     // Normaler Chat: History + neue User-Nachricht
-    const claudeMessages = isGreeting
+    let claudeMessages = isGreeting
       ? [{ role: 'user' as const, content: 'Bitte eröffne das Gespräch.' }]
       : messages.map((m: { role: string; content: string }) => ({
           role: m.role as 'user' | 'assistant',
           content: m.content,
         }))
+
+    // Anthropics API verlangt zwingend role:"user" als erste Nachricht.
+    // KICOs automatische Begrüßung (isGreeting) landet als erste Nachricht mit
+    // role:"assistant" im Client-Verlauf -- ohne diesen Trim schlägt die
+    // allererste eigene Nachricht der Nutzerin nach der Begrüßung mit einem
+    // 400er von Anthropic fehl (leading assistant message). Live-Bug,
+    // gefunden 30. Juli 2026.
+    while (claudeMessages.length > 0 && claudeMessages[0].role === 'assistant') {
+      claudeMessages = claudeMessages.slice(1)
+    }
 
     // User-Nachricht in DB speichern — aber NICHT bei isGreeting.
     // risk_level/risk_terms werden auch bei niedrigeren Stufen mitgespeichert

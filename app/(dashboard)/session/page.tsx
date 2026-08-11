@@ -11,7 +11,7 @@ export default async function SessionPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('first_name')
+    .select('first_name, voice_gender')
     .eq('id', user.id)
     .single()
 
@@ -61,6 +61,7 @@ export default async function SessionPage() {
         firstName={profile?.first_name ?? null}
         sessions={enrichedSessions}
         userId={user.id}
+        voiceGender={(profile?.voice_gender as 'weiblich' | 'maennlich') ?? 'weiblich'}
       />
     </div>
   )

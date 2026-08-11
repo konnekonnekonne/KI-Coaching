@@ -267,6 +267,14 @@ async def run_bot(transport: BaseTransport, runner_args: RunnerArguments) -> Non
         settings=SafeAnthropicLLMService.Settings(
             model=COACHING_MODEL,
             system_instruction=SYSTEM_PROMPT,
+            # Ohne Caching wird der komplette Systemprompt (~4k Tokens seit dem
+            # Ausbau um Methodenkorpus/Rahmenmaterial) bei JEDEM Call neu
+            # prozessiert -- inklusive der ersten Begruessung. Live-Test
+            # 30. Juli 2026 zeigte spuerbare Verzoegerung schon vor dem ersten
+            # Wort und wachsend ueber die Session. enable_prompt_caching laesst
+            # Anthropic den statischen Anteil (System-Prompt, aeltere Historie)
+            # serverseitig cachen.
+            enable_prompt_caching=True,
         ),
     )
     llm.register_function("set_anchor", make_set_anchor_handler(session_id, user_id))

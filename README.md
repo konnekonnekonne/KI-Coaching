@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# KICO — KI-gestütztes systemisches Coaching
 
-## Getting Started
+KICO ist eine Forschungsplattform für KI-gestütztes Coaching, entstanden im Rahmen der Abschlussarbeit „KI-gestütztes systemisches Coaching" von **Henrike Thomsen** und **Konstantin Escher** (Systemischer Master Business Coach, INA CCW / bbw Bildungswerk).
 
-First, run the development server:
+Kein kommerzielles Produkt, sondern ein geschlossener Forschungsprototyp: KICO führt Coachees per Text oder Sprache durch ein Gespräch, das methodisch dem INA-CCW-Curriculum folgt (U-Modell nach Scharmer, systemische Fragetechniken, Auftragsklärung) — statt sich auf das freie, unstrukturierte Verhalten eines allgemeinen Sprachmodells zu verlassen.
+
+---
+
+## Die Idee dahinter: Methode vor Modell
+
+Ein Sprachmodell wie Claude ist von Haus aus ein Allzwecksystem — kein Coach. Es hat keine Phasenstruktur, keine eingebaute Krisenerkennung, keine Vorstellung davon, wo im Gespräch es gerade steht. KICOs Grundprinzip ist deshalb, die Coaching-Methodik nicht dem Modell zu überlassen, sondern sie als eigenständige Architektur *um* das Modell herum zu bauen:
+
+- **Sicherheit vor dem Modell** — ein regelbasierter Filter prüft jede Eingabe auf Krisensignale, bevor das Sprachmodell sie überhaupt sieht.
+- **Methode vor Modell** — ein aus dem realen INA-CCW-Ausbildungsmaterial abgeleiteter Methodenkorpus (`docs/tools.md`, `docs/rahmen.md`) strukturiert den Systemprompt, statt dass das Modell improvisiert.
+- **Kontext statt Sitzung** — Gespräche sollen sich über mehrere Sessions hinweg erinnern (Ausbaustufe, siehe `docs/backlog.md`).
+- **Gateway statt Endpunkt** — KICO ersetzt kein menschliches Coaching, sondern ist als strukturierter Einstieg konzipiert.
+
+Die vollständige Begründung, inklusive verworfener Ansätze und offener Lücken, steht in [`docs/`](docs/00_uebersicht.md) — dort wird jede nicht-triviale Entscheidung dokumentiert, nicht nur das Ergebnis.
+
+---
+
+## Technischer Überblick
+
+| Bereich | Umsetzung |
+|---|---|
+| Web-Plattform | Next.js (App Router), TypeScript, Tailwind v4 |
+| Datenbank & Auth | Supabase (Postgres, Row Level Security, passwortloser Login) |
+| Text-Coaching | Anthropic Claude, serverseitig via `app/api/chat` |
+| Voice-Coaching | Cascaded-Pipeline: Deepgram (STT/TTS, EU) → Claude → Deepgram, gehostet auf Pipecat Cloud |
+| Hosting | Netlify (Web), Pipecat Cloud (Voice-Agent) |
+
+Für die vollständige Architektur, jede Design-Entscheidung und den aktuellen Umsetzungsstand siehe [`docs/00_uebersicht.md`](docs/00_uebersicht.md) — dem Einstiegspunkt der technischen Dokumentation.
+
+---
+
+## Lokal starten
+
+**Voraussetzungen:** Node.js 20+, ein eigenes Supabase-Projekt, ein Anthropic-API-Key.
 
 ```bash
+npm install
+cp .env.example .env.local   # eigene Supabase-/Anthropic-Werte eintragen
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Die App läuft dann unter [http://localhost:3000](http://localhost:3000). Ohne gültige Supabase-Werte in `.env.local` startet der Server zwar, aber Login und Datenbankzugriffe schlagen fehl.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Voice-Agent** (separater Python-Service, nicht Teil des Next.js-Prozesses):
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cd voice-agent
+uv sync
+uv run bot.py
+```
 
-## Learn More
+Details zu Secrets, Deployment und Betrieb: [`docs/06_deployment.md`](docs/06_deployment.md) und [`docs/11_voice-cascaded-umsetzung.md`](docs/11_voice-cascaded-umsetzung.md).
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Projektstruktur
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+app/            Next.js-Routen (App Router)
+components/     UI- und Coaching-Komponenten
+lib/            Systemprompt, Modellwahl, Signal-Scanner, Anker-Tools
+supabase/       Datenbank-Migrationen
+voice-agent/    Python-Voice-Pipeline (Pipecat Cloud)
+docs/           Vollständige technische Dokumentation — hier anfangen
+design/         Frühe visuelle Explorationen (historisch, vor dem finalen Design-System)
+```
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Status
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Aktiver Forschungsprototyp für einen geschlossenen Teilnehmendenkreis. Kein Ersatz für menschliches Coaching oder therapeutische Hilfe — bei akuten Krisen verweist KICO an die Telefonseelsorge (0800 111 0 111, kostenlos, 24/7). Offene Lücken und der aktuelle Stand gegenüber dem Anforderungskatalog der Abschlussarbeit sind ehrlich in [`docs/09_anforderungsabgleich.md`](docs/09_anforderungsabgleich.md) und [`docs/backlog.md`](docs/backlog.md) festgehalten.
