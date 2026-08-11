@@ -7,6 +7,7 @@ dependencies = [
     "pipecat-ai[anthropic,daily,deepgram,runner,silero]>=1.4.0",
     "pipecatcloud",
     "supabase",
+    "anthropic",
 ]
 
 [dependency-groups]

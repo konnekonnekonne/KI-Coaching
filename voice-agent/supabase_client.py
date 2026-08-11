@@ -8,9 +8,12 @@ statt sich auf auth.uid() zu verlassen.
 """
 
 import os
-from supabase import create_client, Client
+from collections.abc import Callable
+
+from supabase import AsyncClient, Client, create_async_client, create_client
 
 _client: Client | None = None
+_async_client: AsyncClient | None = None
 
 
 def get_client() -> Client:
@@ -20,6 +23,15 @@ def get_client() -> Client:
         key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
         _client = create_client(url, key)
     return _client
+
+
+async def get_async_client() -> AsyncClient:
+    global _async_client
+    if _async_client is None:
+        url = os.environ["SUPABASE_URL"]
+        key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+        _async_client = await create_async_client(url, key)
+    return _async_client
 
 
 def write_message(
@@ -81,3 +93,32 @@ def request_anchor_input(session_id: str, user_id: str, key: str, label: str, pr
         },
         on_conflict="session_id,key",
     ).execute()
+
+
+async def watch_anchor_submissions(session_id: str, on_submitted: Callable[[str], None]) -> None:
+    """Abonniert Supabase Realtime auf UPDATE-Events der session_anchors-
+    Zeilen dieser Session -- die Realtime-Bridge fuer den Pause-Mechanismus
+    aus anchor_pause.py (B-23, 30. Juli 2026). Ruft on_submitted(key) auf,
+    sobald eine Karte tatsaechlich abgeschickt wurde (awaiting_input wechselt
+    auf False, value ist gesetzt) -- nicht bei jedem beliebigen Update, damit
+    ein set_anchor-Aufruf auf einen anderen key nicht versehentlich eine
+    laufende Pause beendet. Laeuft als Hintergrund-Task fuer die gesamte
+    Sessiondauer, siehe run_bot in bot.py."""
+    client = await get_async_client()
+    channel = client.channel(f"anchor-pause-{session_id}")
+
+    def _on_update(payload: dict) -> None:
+        row = (payload.get("data") or {}).get("record") or {}
+        if row.get("awaiting_input") is False and row.get("value") is not None:
+            key = row.get("key")
+            if key:
+                on_submitted(key)
+
+    channel.on_postgres_changes(
+        "UPDATE",
+        callback=_on_update,
+        table="session_anchors",
+        schema="public",
+        filter=f"session_id=eq.{session_id}",
+    )
+    await channel.subscribe()

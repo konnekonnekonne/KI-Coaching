@@ -24,14 +24,13 @@ import os
 
 from dotenv import load_dotenv
 from loguru import logger
+from pipecat.adapters.schemas.function_schema import FunctionSchema
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.audio.vad.vad_analyzer import VADParams
 from pipecat.frames.frames import Frame, LLMRunFrame, TextFrame, TTSSpeakFrame
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.worker import PipelineParams, PipelineWorker
-from pipecat.adapters.schemas.function_schema import FunctionSchema
 from pipecat.processors.aggregators.llm_context import LLMContext
-from pipecat.services.llm_service import FunctionCallParams
 from pipecat.processors.aggregators.llm_response_universal import (
     LLMContextAggregatorPair,
     LLMUserAggregatorParams,
@@ -41,16 +40,23 @@ from pipecat.runner.types import RunnerArguments
 from pipecat.runner.utils import create_transport
 from pipecat.services.deepgram.stt import DeepgramSTTService
 from pipecat.services.deepgram.tts import DeepgramTTSService
+from pipecat.services.llm_service import FunctionCallParams
+from pipecat.transcriptions.language import Language
 from pipecat.transports.base_transport import BaseTransport
 from pipecat.transports.daily.transport import DailyParams
-from pipecat.transcriptions.language import Language
 from pipecat.workers.runner import WorkerRunner
 
-from system_prompt import SYSTEM_PROMPT
-from models import COACHING_MODEL, VOICE_WEIBLICH, VOICE_MAENNLICH
-from supabase_client import write_message, upsert_anchor, request_anchor_input
+from anchor_pause import AnchorPauseState, is_addressed_to_coach
 from anthropic_fix import SafeAnthropicLLMService
-from signal_scanner import scan_for_signals, CRISIS_RESPONSE_TEXT
+from models import COACHING_MODEL, VOICE_MAENNLICH, VOICE_WEIBLICH
+from signal_scanner import CRISIS_RESPONSE_TEXT, scan_for_signals
+from supabase_client import (
+    request_anchor_input,
+    upsert_anchor,
+    watch_anchor_submissions,
+    write_message,
+)
+from system_prompt import SYSTEM_PROMPT
 
 load_dotenv(override=True)
 
@@ -87,15 +93,31 @@ class TranscriptWriter(FrameProcessor):
     unterbrechen. Der Trigger selbst bleibt hart: einmal erkannt, wird immer
     reagiert, auch wenn der Coachee danach abwiegelt (bewusst so, siehe
     docs/backlog.md B-05b -- ein "ist schon okay" direkt nach einer
-    Krisenaeusserung ist selbst ein bekanntes Risikomuster)."""
+    Krisenaeusserung ist selbst ein bekanntes Risikomuster).
+
+    Fuer role="user" zusaetzlich der Pause-Mechanismus fuer offene Anker-
+    Karten (anchor_pause.py, B-23, 30. Juli 2026): Waehrend eine Karte auf
+    das Abschicken wartet (pause_state.is_paused), wird jede Aeusserung per
+    Haiku klassifiziert -- lautes Formulieren wird nicht weitergereicht
+    (KICO bekommt diesen Turn nie zu sehen, reagiert also nicht), eine echte
+    Adressierung wird mit einem Kontext-Hinweis versehen und normal
+    weitergereicht, damit KICO kurz antwortet, aber zur Schreibaufgabe
+    zurueckfuehrt statt sie fallenzulassen."""
 
     CRISIS_GRACE_SECS = 4.0
 
-    def __init__(self, session_id: str, user_id: str, role: str):
+    def __init__(
+        self,
+        session_id: str,
+        user_id: str,
+        role: str,
+        pause_state: AnchorPauseState | None = None,
+    ):
         super().__init__()
         self.session_id = session_id
         self.user_id = user_id
         self.role = role
+        self.pause_state = pause_state
         self._pending_crisis_timer: asyncio.Task | None = None
 
     async def process_frame(self, frame: Frame, direction: FrameDirection):
@@ -115,6 +137,18 @@ class TranscriptWriter(FrameProcessor):
                         self._deliver_crisis_response(direction)
                     )
                     return  # Original-Frame nicht weiterreichen -- kein LLM-Call fuer diesen Turn
+
+                if self.pause_state is not None and self.pause_state.is_paused:
+                    addressed = await is_addressed_to_coach(frame.text)
+                    if not addressed:
+                        return  # lautes Formulieren -- Pause haelt an, keine Reaktion
+                    frame.text = (
+                        f"{frame.text}\n\n"
+                        f'[Hinweis: Die Karte "{self.pause_state.label}" wartet noch auf das '
+                        "Abschicken durch den Coachee. Antworte kurz, aber führe danach aktiv "
+                        "zur Schreibaufgabe zurück -- lass sie nicht fallen und formuliere sie "
+                        "nicht selbst.]"
+                    )
             else:
                 write_message(self.session_id, self.user_id, self.role, frame.text)
 
@@ -216,13 +250,16 @@ REQUEST_ANCHOR_INPUT_SCHEMA = FunctionSchema(
 )
 
 
-def make_request_anchor_input_handler(session_id: str, user_id: str):
+def make_request_anchor_input_handler(session_id: str, user_id: str, pause_state: AnchorPauseState):
     async def handle_request_anchor_input(params: FunctionCallParams) -> None:
         args = params.arguments
         request_anchor_input(
             session_id, user_id,
             key=args["key"], label=args["label"], prompt=args["prompt"],
         )
+        # Pause-Mechanismus (B-23, 30. Juli 2026): ab hier reagiert TranscriptWriter
+        # nicht mehr auf lautes Formulieren, siehe anchor_pause.py.
+        pause_state.pause(args["key"], args["label"])
         await params.result_callback({"status": "Eingabekarte geoeffnet"})
 
     return handle_request_anchor_input
@@ -277,9 +314,15 @@ async def run_bot(transport: BaseTransport, runner_args: RunnerArguments) -> Non
             enable_prompt_caching=True,
         ),
     )
+    # Pause-Mechanismus fuer offene Anker-Karten (B-23, 30. Juli 2026,
+    # siehe anchor_pause.py) -- eine Instanz pro Session, geteilt zwischen
+    # Tool-Handler, TranscriptWriter und der Realtime-Bridge unten.
+    pause_state = AnchorPauseState()
+
     llm.register_function("set_anchor", make_set_anchor_handler(session_id, user_id))
     llm.register_function(
-        "request_anchor_input", make_request_anchor_input_handler(session_id, user_id)
+        "request_anchor_input",
+        make_request_anchor_input_handler(session_id, user_id, pause_state),
     )
 
     context = LLMContext(tools=[SET_ANCHOR_SCHEMA, REQUEST_ANCHOR_INPUT_SCHEMA])
@@ -296,7 +339,7 @@ async def run_bot(transport: BaseTransport, runner_args: RunnerArguments) -> Non
         [
             transport.input(),
             stt,
-            TranscriptWriter(session_id, user_id, role="user"),
+            TranscriptWriter(session_id, user_id, role="user", pause_state=pause_state),
             user_aggregator,
             llm,
             TranscriptWriter(session_id, user_id, role="assistant"),
@@ -315,6 +358,13 @@ async def run_bot(transport: BaseTransport, runner_args: RunnerArguments) -> Non
         observers=[],
     )
 
+    # Realtime-Bridge fuer den Pause-Mechanismus (B-23, 30. Juli 2026): laeuft
+    # im Hintergrund fuer die gesamte Sessiondauer, hebt pause_state auf,
+    # sobald eine Karte tatsaechlich abgeschickt wird (siehe supabase_client.py).
+    anchor_watch_task = asyncio.create_task(
+        watch_anchor_submissions(session_id, pause_state.resume)
+    )
+
     @worker.rtvi.event_handler("on_client_ready")
     async def on_client_ready(rtvi):
         # KICO eroeffnet das Gespraech proaktiv -- passend zur Begruessung
@@ -331,6 +381,7 @@ async def run_bot(transport: BaseTransport, runner_args: RunnerArguments) -> Non
     @transport.event_handler("on_client_disconnected")
     async def on_client_disconnected(transport, client):
         logger.info("Client disconnected")
+        anchor_watch_task.cancel()
         await worker.cancel()
 
     runner = WorkerRunner(handle_sigint=False)

@@ -139,6 +139,12 @@ Ohne dieses System bleiben B-01 (viele INA-CCW-Tools brauchen genau solche Artef
 - Erster Anwendungsfall: die Coachingfrage (B-18) — KICO fragt weiterhin verbal danach (hört die Antwort normal mit, das Gespräch wartet nicht), öffnet aber zusätzlich die Karte, damit der Coachee sie in eigenen Worten festhält, statt dass KICO sie hineinschreibt.
 - **Bewusste Scope-Grenze:** Im Textmodus fließt die eingetippte Antwort sofort auch als normale Chat-Nachricht an Claude zurück (`ChatWindow`/`SessionShell`, per `ref`), reiht sich also nahtlos in den Gesprächskontext ein. Im Voice-Modus persistiert die Karte korrekt (dieselbe Komponente, dieselbe Tabelle), aber das Getippte fließt **nicht live** in den laufenden Pipecat-Kontext zurück — dafür bräuchte es eine Realtime-Bridge vom Supabase-Update in den laufenden Agent-Prozess, die hier bewusst noch nicht gebaut wurde (Aufwand/Nutzen für diesen ersten Durchstich nicht gerechtfertigt). Das ist unkritisch, weil KICO die Coachingfrage ohnehin schon über den Sprachkanal gehört hat — die Karte ist ein zusätzliches Artefakt, kein Gate für den Gesprächsfortschritt. Nächster Schritt für allgemeinere Werkzeuge (Logische Ebenen etc.), bei denen der Coachee etwas schreibt, das KICO noch NICHT anderweitig kennt: diese Bridge nachrüsten.
 
+**Erweiterung (Mechanismus 4 — Pause bis zum Abschicken, 30. Juli 2026):** Live-Test zeigte einen methodischen Fehler: Sobald die Karte offen war, machte KICO im Voice-Modus sofort mit der nächsten inhaltlichen Frage weiter, statt dem Coachee Zeit zum Formulieren zu geben — das Gegenteil der beabsichtigten Wirkung von Mechanismus 3. Nutzer-Entscheidung dazu: Kein Timeout, der KICO die Formulierung übernehmen lässt — das widerspräche derselben Prozess-statt-Inhalt-Verantwortung wie beim Coachingfrage-Qualitätscheck (siehe `docs/03_systemprompt.md`). Umgesetzt:
+- `voice-agent/anchor_pause.py` (neu): `AnchorPauseState` hält fest, welcher Anker-`key` gerade auf das Abschicken wartet. `is_addressed_to_coach()` klassifiziert per Haiku (`SUPPORT_MODEL`), ob eine Äußerung lautes Formulieren ist oder echte Adressierung — anders als beim Krisenfilter (B-05b) ist das keine Wortlisten-Frage, sondern eine Bedeutungsfrage, deshalb ein Modellurteil statt Deterministik.
+- `TranscriptWriter` (`bot.py`) reicht Äußerungen während einer aktiven Pause nur weiter, wenn sie als Adressierung klassifiziert wurden — sonst kein LLM-Call, keine Reaktion. Bei echter Adressierung bekommt der Frame einen Kontext-Hinweis, der KICO anweist, kurz zu antworten und danach aktiv zur Schreibaufgabe zurückzuführen.
+- `supabase_client.watch_anchor_submissions()` (neu): Realtime-Abo (Async-Client) auf `session_anchors`-UPDATEs der Session — hebt die Pause auf, sobald `awaiting_input` auf `false` wechselt. Das ist die in Mechanismus 3 zurückgestellte Bridge, hier aber bewusst nur für das Pause-Ende genutzt, nicht dafür, den geschriebenen Wert selbst live in den Kontext zu spiegeln (bleibt weiterhin offen für allgemeinere Werkzeuge).
+- Systemprompt (TS+Python) ergänzt um die Verhaltensregel für offene Karten.
+
 **Aufwand:** Hoch — echte Session-UI-Architektur-Frage, betraf ChatWindow und VoiceSession gleichermaßen.
 
 ---
@@ -205,11 +211,13 @@ Im Dashboard ist "Zugriff auf Protokolle" als Feature geplant, aber nicht umgese
 
 ### B-25 — Homepage und Dashboard (nach Login) überarbeiten
 **Priorität:** Mittel
-**Status:** Offen
+**Status:** Teilweise umgesetzt (Homepage-Inhalt, 30. Juli 2026)
 
 Nutzerrückmeldung (29. Juli 2026): Sowohl die öffentliche Homepage als auch das Dashboard nach dem Login brauchen eine grundlegende Überarbeitung. Noch nicht weiter spezifiziert, welche konkreten Punkte betroffen sind (Layout, Inhalt, Informationsarchitektur oder alles zusammen) — als Marker gesetzt, damit es nicht verloren geht.
 
-*Bezug zur Canvas-Diskussion:* Sollte nicht isoliert vom geplanten Design-System-Ausbau für die Session-Umgebung (Canvas/Modularität, siehe Konversationsverlauf 29./30. Juli 2026) betrachtet werden — wenn ein neues visuelles Vokabular für die Session entsteht, sollte Homepage/Dashboard stilistisch konsistent mitgezogen werden, statt zwei parallele Design-Sprachen zu pflegen.
+**Update 30. Juli 2026:** Inhaltliche Überarbeitung von `app/page.tsx` (öffentliche Homepage, außerhalb des Logins): neuer Abschnitt „Warum" ergänzt den Zweck der Plattform konkret (Motivation aus Kapitel 1 der Abschlussarbeit — Menschen nutzen bereits Allzweck-KI für Reflexionsgespräche ohne Methodik/Sicherheitsschicht — statt nur abstrakt), plus Links zu Quellcode/Dokumentation (GitHub) und zur vollständigen Abschlussarbeit (Google Doc) im Abschnitt „Hintergrund". Bewusst nur inhaltlich, kein Layout-Redesign — das bleibt an die Canvas-Design-Sprache gekoppelt (siehe unten). Dashboard-Überarbeitung weiterhin offen.
+
+*Bezug zur Canvas-Diskussion:* Ein grundlegendes Layout-Redesign sollte nicht isoliert vom geplanten Design-System-Ausbau für die Session-Umgebung (Canvas/Modularität, siehe Konversationsverlauf 29./30. Juli 2026) betrachtet werden — wenn ein neues visuelles Vokabular für die Session entsteht, sollte Homepage/Dashboard stilistisch konsistent mitgezogen werden, statt zwei parallele Design-Sprachen zu pflegen.
 
 ---
 

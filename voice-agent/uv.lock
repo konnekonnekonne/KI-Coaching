@@ -1089,6 +1089,7 @@ name = "kico-voice-agent"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "anthropic" },
     { name = "pipecat-ai", extra = ["anthropic", "daily", "deepgram", "runner"] },
     { name = "pipecatcloud" },
     { name = "supabase" },
@@ -1102,6 +1103,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "anthropic" },
     { name = "pipecat-ai", extras = ["anthropic", "daily", "deepgram", "runner", "silero"], specifier = ">=1.4.0" },
     { name = "pipecatcloud" },
     { name = "supabase" },

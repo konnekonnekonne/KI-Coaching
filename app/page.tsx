@@ -47,6 +47,19 @@ export default function Home() {
           </Link>
         </section>
 
+        {/* ── Warum ── */}
+        <section className="border-t border-border pt-12 pb-16">
+          <p className="label-text mb-3">Warum</p>
+          <p className="body-text text-muted leading-relaxed">
+            Millionen Menschen sprechen heute schon mit KI über das, was sie
+            bewegt — beruflich, persönlich, manchmal in Krisen. Allgemeine
+            Sprachmodelle sind darauf nicht ausgelegt: keine Methodik, keine
+            eingebaute Krisenerkennung, keine Vorstellung davon, wo ein
+            Gespräch gerade steht. KICO untersucht, was sich ändert, wenn
+            Coaching-Methodik die Architektur bestimmt — nicht das Modell.
+          </p>
+        </section>
+
         {/* ── Was KICO ist ── */}
         <section className="border-t border-border pt-12 pb-16 space-y-10">
 
@@ -89,7 +102,7 @@ export default function Home() {
             href="https://inaccw.org"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block opacity-40 hover:opacity-70 transition-opacity"
+            className="inline-block opacity-40 hover:opacity-70 transition-opacity mb-8"
           >
             <Image
               src="https://inaccw.org/wp-content/uploads/2021/08/logo.svg"
@@ -99,6 +112,25 @@ export default function Home() {
               unoptimized
             />
           </a>
+
+          <div className="flex flex-wrap gap-x-8 gap-y-2">
+            <a
+              href="https://github.com/konnekonnekonne/KI-Coaching"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="caption text-primary hover:text-primary-dark transition-colors"
+            >
+              Quellcode & technische Dokumentation →
+            </a>
+            <a
+              href="https://docs.google.com/document/d/14zB6GyVxf6IXCYXzhoxe69xKSJGNXdV81uNlLxSuCDI/edit?usp=sharing"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="caption text-primary hover:text-primary-dark transition-colors"
+            >
+              Die Abschlussarbeit lesen →
+            </a>
+          </div>
         </section>
 
         {/* ── Disclaimer ── */}
