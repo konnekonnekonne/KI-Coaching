@@ -123,7 +123,7 @@ export default function Home() {
               Quellcode & technische Dokumentation →
             </a>
             <a
-              href="https://docs.google.com/document/d/14zB6GyVxf6IXCYXzhoxe69xKSJGNXdV81uNlLxSuCDI/edit?usp=sharing"
+              href="/abschlussarbeit-ki-im-coaching.pdf"
               target="_blank"
               rel="noopener noreferrer"
               className="caption text-primary hover:text-primary-dark transition-colors"
