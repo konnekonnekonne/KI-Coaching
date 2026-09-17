@@ -13,7 +13,7 @@
   --on-primary:      #FFFFFF;   /* Text auf Primary-Hintergrund */
   --accent:          #52B788;
   --text:            #1B2E25;
-  --muted:           #64748B;
+  --muted:           #475569;   /* verstärkt (war #64748B, ≈4,4:1 gegen --bg — riss die 4,5:1-AA-Schwelle bei jeder Nutzung mit reduzierter Deckkraft). Jetzt ≈7:1. */
   --surface:         #FFFFFF;
   --border:          #D8E6DE;
   --border-strong:   #7C9186;   /* Rahmen für Bedienelemente, deren Kontur selbst Information trägt (z.B. SegmentedControl) — >=3:1 gegen --bg, im Unterschied zu --border (rein dekorativ) */

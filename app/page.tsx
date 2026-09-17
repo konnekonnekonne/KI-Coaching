@@ -13,7 +13,7 @@ export default function Home() {
         </div>
         <Link
           href="/login"
-          className="caption text-muted/60 hover:text-muted transition-colors"
+          className="caption text-muted hover:text-kico-text transition-colors"
         >
           Anmelden
         </Link>
@@ -24,7 +24,7 @@ export default function Home() {
         {/* ── Hero ── */}
         <section className="min-h-[70vh] flex flex-col justify-center pt-24 pb-12">
 
-          <p className="caption text-muted/50 mb-8 tracking-widest uppercase">
+          <p className="caption text-muted mb-8 tracking-widest uppercase">
             Forschungsprototyp · INA CCW · 2026
           </p>
 
@@ -83,9 +83,12 @@ export default function Home() {
           <div>
             <p className="label-text mb-3">Grenzen</p>
             <p className="body-text text-muted leading-relaxed">
-              Ein zentrales Forschungsziel ist zu verstehen, was KI im Coaching
-              nicht kann — und warum. KICO macht diese Grenzen sichtbar,
-              statt sie zu verstecken.
+              KI-Coaching findet in einem Raum statt, den du selbst
+              kontrollierst — jederzeit unterbrechbar, ohne die Verbindlichkeit
+              eines persönlichen Termins. KICO kann nicht bemerken, wenn du
+              einem Thema ausweichst, und dich nicht dazu anhalten,
+              dranzubleiben. Ein zentrales Forschungsziel ist, genau diese
+              Grenze sichtbar zu machen, statt sie zu verschweigen.
             </p>
           </div>
         </section>
@@ -95,8 +98,10 @@ export default function Home() {
           <p className="label-text mb-6">Hintergrund</p>
           <p className="body-text text-muted leading-relaxed mb-6">
             Entstanden als Abschlussarbeit von Henrike Thomsen & Konstantin Escher
-            im systemischen Business Coaching. Kein kommerzielles Produkt —
-            ein Forschungsprojekt für einen geschlossenen Teilnehmerkreis.
+            im systemischen Business Coaching. Kein kommerzielles Produkt — ein
+            offen dokumentiertes Forschungsprojekt, aktuell für einen
+            geschlossenen Teilnehmerkreis betrieben und als Grundlage für
+            künftige INA&nbsp;CCW-Kohorten frei zugänglich.
           </p>
           <a
             href="https://inaccw.org"
@@ -135,7 +140,7 @@ export default function Home() {
 
         {/* ── Disclaimer ── */}
         <section className="border-t border-border py-10">
-          <p className="caption text-muted/50 leading-relaxed">
+          <p className="caption text-muted leading-relaxed">
             KICO ersetzt keine Psychotherapie oder professionelle Beratung.
             Bei psychischen Krisen: Telefonseelsorge{' '}
             <a href="tel:08001110111" className="text-primary hover:text-primary-dark transition-colors">
