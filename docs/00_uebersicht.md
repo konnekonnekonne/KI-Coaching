@@ -6,9 +6,9 @@
 
 ## Zweck dieses Dokuments
 
-Diese Dokumentation beschreibt den Aufbau der KICO-Plattform (KI-Coach) als technischen Anhang zur Abschlussarbeit „KI-gestütztes systemisches Coaching". Sie richtet sich an Leserinnen und Leser mit technischem Grundverständnis und soll nachvollziehbar machen, wie die in der Arbeit beschriebenen Architekturprinzipien in eine lauffähige Software übersetzt wurden.
+Diese Dokumentation beschreibt den Aufbau der KICO-Plattform (KI-Coach) als technischen Anhang zur Abschlussarbeit „KI im Coaching: Anforderungen an einen KI-Coach und kritische Abwägung gegenüber menschlichem Coaching" (eingereicht 14. September 2026, [PDF](../public/abschlussarbeit-ki-im-coaching.pdf)). Sie richtet sich an Leserinnen und Leser mit technischem Grundverständnis und soll nachvollziehbar machen, wie die in der Arbeit beschriebenen Architekturprinzipien in eine lauffähige Software übersetzt wurden.
 
-Die Dokumentation wächst iterativ mit der Plattform und spiegelt den tatsächlichen Bauprozess wider — einschließlich Entscheidungen, Abwägungen und Korrekturen.
+Die Arbeit selbst ist abgeschlossen und eingereicht; diese Dokumentation und die Plattform werden darüber hinaus weitergeführt — u. a. als Übergabegrundlage für künftige INA-CCW-Kohorten (siehe „Wozu" unten). Sie spiegelt den tatsächlichen Bauprozess wider, einschließlich Entscheidungen, Abwägungen und Korrekturen, nicht nur das fertige Ergebnis.
 
 ---
 
@@ -45,7 +45,8 @@ Die Dokumentation wächst iterativ mit der Plattform und spiegelt den tatsächli
 | Voice-Architektur | Cascaded: Deepgram STT/TTS (EU-Endpoint) → Claude → Deepgram TTS, gehostet auf Pipecat Cloud (Region eu-central/Frankfurt). Siehe [10_architekturentscheidung-voice-cascaded.md](10_architekturentscheidung-voice-cascaded.md) und [11_voice-cascaded-umsetzung.md](11_voice-cascaded-umsetzung.md) |
 | Zielgruppe | Einzelpersonen im beruflichen Kontext (Forschungsrahmen) |
 | Sprache der Plattform | Deutsch |
-| Dokumentationsstand | 30. Juli 2026 |
+| Abschlussarbeit | Eingereicht 14. September 2026 ([PDF](../public/abschlussarbeit-ki-im-coaching.pdf)) |
+| Dokumentationsstand | 17. September 2026 |
 
 ---
 

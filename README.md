@@ -1,8 +1,10 @@
 # KICO — KI-gestütztes systemisches Coaching
 
-KICO ist eine Forschungsplattform für KI-gestütztes Coaching, entstanden im Rahmen der Abschlussarbeit „KI-gestütztes systemisches Coaching" von **Henrike Thomsen** und **Konstantin Escher** (Systemischer Master Business Coach, INA CCW / bbw Bildungswerk).
+KICO ist eine Forschungsplattform für KI-gestütztes Coaching, entstanden im Rahmen der Abschlussarbeit **„KI im Coaching: Anforderungen an einen KI-Coach und kritische Abwägung gegenüber menschlichem Coaching"** von **Henrike Thomsen** und **Konstantin Escher** (Systemischer Master Business Coach, INA CCW / bbw Bildungswerk, eingereicht 14. September 2026).
 
-Kein kommerzielles Produkt, sondern ein geschlossener Forschungsprototyp: KICO führt Coachees per Text oder Sprache durch ein Gespräch, das methodisch dem INA-CCW-Curriculum folgt (U-Modell nach Scharmer, systemische Fragetechniken, Auftragsklärung) — statt sich auf das freie, unstrukturierte Verhalten eines allgemeinen Sprachmodells zu verlassen.
+📄 [Die vollständige Abschlussarbeit lesen (PDF)](public/abschlussarbeit-ki-im-coaching.pdf) · 🌐 [Live-Demo: kico.pro](https://kico.pro)
+
+Kein kommerzielles Produkt, sondern ein Forschungsprototyp: KICO führt Coachees per Text oder Sprache durch ein Gespräch, das methodisch dem INA-CCW-Curriculum folgt (U-Modell nach Scharmer, systemische Fragetechniken, Auftragsklärung) — statt sich auf das freie, unstrukturierte Verhalten eines allgemeinen Sprachmodells zu verlassen. Code und Dokumentation sind offen einsehbar, damit sowohl die Argumentation der Arbeit als auch die tatsächliche Umsetzung nachvollziehbar bleiben — auch für Leser:innen ohne eigenen Zugriff auf die Plattform.
 
 ---
 
@@ -66,11 +68,13 @@ lib/            Systemprompt, Modellwahl, Signal-Scanner, Anker-Tools
 supabase/       Datenbank-Migrationen
 voice-agent/    Python-Voice-Pipeline (Pipecat Cloud)
 docs/           Vollständige technische Dokumentation — hier anfangen
-design/         Frühe visuelle Explorationen (historisch, vor dem finalen Design-System)
+public/         Statische Dateien, u.a. die Abschlussarbeit als PDF
 ```
 
 ---
 
 ## Status
 
-Aktiver Forschungsprototyp für einen geschlossenen Teilnehmendenkreis. Kein Ersatz für menschliches Coaching oder therapeutische Hilfe — bei akuten Krisen verweist KICO an die Telefonseelsorge (0800 111 0 111, kostenlos, 24/7). Offene Lücken und der aktuelle Stand gegenüber dem Anforderungskatalog der Abschlussarbeit sind ehrlich in [`docs/09_anforderungsabgleich.md`](docs/09_anforderungsabgleich.md) und [`docs/backlog.md`](docs/backlog.md) festgehalten.
+Die Abschlussarbeit ist eingereicht (14. September 2026), die Plattform bleibt ein aktiver Forschungsprototyp — kein kommerzielles Produkt und kein Ersatz für menschliches Coaching oder therapeutische Hilfe. Bei akuten Krisen verweist KICO an die Telefonseelsorge (0800 111 0 111, kostenlos, 24/7).
+
+Der aktuelle Betrieb ist ein geschlossener Pilot für einen begrenzten Teilnehmendenkreis. Code und Dokumentation sind bewusst offen gehalten, damit künftige INA-CCW-Kohorten die Plattform kritisch prüfen und weiterentwickeln können — offene Lücken gegenüber dem Anforderungskatalog der Arbeit sind dafür ehrlich in [`docs/09_anforderungsabgleich.md`](docs/09_anforderungsabgleich.md) und [`docs/backlog.md`](docs/backlog.md) festgehalten, statt verschwiegen zu werden.
